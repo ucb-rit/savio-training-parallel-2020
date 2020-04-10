@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="April 21, 2020" />
+  <title>Savio parallel processing training</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header>
+<h1 class="title">Savio parallel processing training</h1>
+<p class="author">April 21, 2020</p>
+<p class="date">Nicolas Chan, Christopher Hann-Soden, Chris Paciorek, Wei Feinstein</p>
+</header>
+<h1 id="introduction">Introduction</h1>
+<p>We’ll do this mostly as a demonstration. We encourage you to login to your account and try out the various examples yourself as we go through them.</p>
+<p>Much of this material is based on the extensive Savio documention we have prepared and continue to prepare, available at our new documentation site: <a href="https://docs-research-it.berkeley.edu/services/high-performance-computing" class="uri">https://docs-research-it.berkeley.edu/services/high-performance-computing</a> as well as our old site: <a href="http://research-it.berkeley.edu/services/high-performance-computing" class="uri">http://research-it.berkeley.edu/services/high-performance-computing</a>.</p>
+<p>The materials for this tutorial are available using git at the short URL (<a href="https://tinyurl.com/brc-apr20">https://tinyurl.com/brc-feb20</a>), the GitHub URL (<a href="https://github.com/ucb-rit/savio-training-parallel-2020" class="uri">https://github.com/ucb-rit/savio-training-parallel-2020</a>), or simply as a <a href="https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip">zip file</a>.</p>
+<h1 id="outline">Outline</h1>
+<ul>
+<li>Introduction
+<ul>
+<li>Hardware</li>
+<li>Parallel processing terms and concepts</li>
+<li>Approaches to parallelization
+<ul>
+<li>Embarrassingly parallel computation</li>
+<li>Threaded computations</li>
+<li>Multi-process computations</li>
+</ul></li>
+<li>Considerations in parallelizing your work</li>
+</ul></li>
+<li>Submitting and monitoring parallel jobs on Savio
+<ul>
+<li>Job submission flags</li>
+<li>MPI- and openMP- based submission examples</li>
+<li>Monitoring jobs to check parallelization</li>
+</ul></li>
+<li>Parallelization using existing software
+<ul>
+<li>How to look at documentation to understand parallel capabilities</li>
+<li>Specific examples</li>
+</ul></li>
+<li>Embarrassingly parallel computation
+<ul>
+<li>GNU parallel</li>
+<li>Job submission details</li>
+</ul></li>
+<li>Parallelization in Python, R, and MATLAB (time permitting)
+<ul>
+<li>High-level overview: threading versus multi-process computation</li>
+<li>Dask and ipyparallel in Python</li>
+<li>future and other packages in R</li>
+<li>parfor in MATLAB</li>
+</ul></li>
+</ul>
+<h1 id="introduction-savio">Introduction: Savio</h1>
+<p>Savio is a cluster of hundreds of computers (aka ‘nodes’), each with many CPUs (cores), networked together.</p>
+<center>
+<img src="savio_diagram.jpeg">
+</center>
+<h1 id="introduction-multi-core-computers">Introduction: multi-core computers</h1>
+<p>Each computer has its own memory and multiple (12-56) cores per machine.</p>
+<center>
+<img src="generic_machine.jpeg">
+</center>
+<p>savio2 nodes: two Intel Xeon 12-core Haswell processors (24 cores per node (a few have 28))</p>
+<h1 id="introduction-terms-and-concepts">Introduction: Terms and concepts</h1>
+<ul>
+<li>Hardware terms
+<ul>
+<li><em>cores</em>: We’ll use this term to mean the different processing units available on a single node. All the cores share main memory.
+<ul>
+<li><em>cpus</em> and <em>processors</em>: These generally have multiple cores, but informally we’ll treat ‘core’, ‘cpu’, and ‘processor’ as being equivalent.</li>
+</ul></li>
+<li><em>hardware threads</em> / <em>hyperthreading</em>: on some processors, each core can have multiple hardware threads, which are sometimes viewed as separate ‘cores’</li>
+<li><em>nodes</em>: We’ll use this term to mean the different machines (computers (machines), each with their own distinct memory, that make up a cluster or supercomputer.</li>
+</ul></li>
+<li>Process terms
+<ul>
+<li><em>processes</em>: individual running instances of a program.
+<ul>
+<li>seen as separate lines in <code>top</code> and <code>ps</code></li>
+</ul></li>
+<li><em>software threads</em>: multiple paths of execution within a single process;the OS sees the threads as a single process, but one can think of them as ‘lightweight’ processes.
+<ul>
+<li>seen as &gt;100% CPU usage in <code>top</code> and <code>ps</code></li>
+</ul></li>
+<li><em>tasks</em>: individual computations needing to be done
+<ul>
+<li><em>MPI tasks</em>: the individual processes run as part of an MPI computation</li>
+</ul></li>
+<li><em>workers</em>: the individual processes that are carrying out a (parallelized) computation (e.g., Python, R, or MATLAB workers controlled from the master Python/R/MATLAB process).</li>
+</ul></li>
+</ul>
+<h1 id="high-level-considerations">High-level considerations</h1>
+<p>Parallelization:</p>
+<ul>
+<li>Ideally we have no more (often the same number of) processes or processes+threads than the cores on a node.</li>
+<li>We generally want at least as many computational tasks as cores available to us.</li>
+</ul>
+<p>Speed:</p>
+<ul>
+<li>Getting data from the CPU cache for processing is fast.</li>
+<li>Getting data from main memory (RAM) is slower.</li>
+<li>Moving data across the network (e.g., between nodes) is much slower, as is reading data off disk.
+<ul>
+<li>Infiniband networking between nodes and to /global/scratch is much faster than Ethernet networking to login nodes and to /global/home/users</li>
+</ul></li>
+<li>Moving data over the internet is even slower.</li>
+</ul>
+<h1 id="introduction-types-of-parallelization">Introduction: types of parallelization</h1>
+<h2 id="embarrassingly-parallel-computation">Embarrassingly parallel computation</h2>
+<h2 id="threaded-computations">Threaded computations</h2>
+<h2 id="multi-process-computations">Multi-process computations</h2>
+<h2 id="distributed-computations">Distributed computations</h2>
+<h2 id="other-kinds-of-parallel-computing">Other kinds of parallel computing</h2>
+<p>(find some pictures)</p>
+<ul>
+<li>GPU computation
+<ul>
+<li>Thousands of slow cores</li>
+<li>Groups of cores do same computation at same time in lock-step</li>
+<li>Separate GPU memory</li>
+</ul></li>
+<li>Spark/Hadoop
+<ul>
+<li>Data distributed across disks of multiple machines</li>
+<li>Each processor works on data local to the machine</li>
+<li>Spark tries to keep data in memory</li>
+</ul></li>
+</ul>
+<h1 id="parallel-processing-considerations">Parallel processing considerations</h1>
+<p>Often you want to strike the sweet spot between too few</p>
+<ul>
+<li>Use all the cores on a node fully
+<ul>
+<li>Have as many worker processes as all the cores available</li>
+<li>Have at least as many tasks as processes (often many more)</li>
+</ul></li>
+<li>Only use multiple nodes if you need more cores or more (total) memory</li>
+<li>Starting up worker processes and sending data involves a delay (latency)
+<ul>
+<li>Don’t have very many tasks that each run very quickly</li>
+</ul></li>
+<li>Having tasks with highly variable completion times can lead to poor load-balancing (particularly with relatively few tasks)</li>
+<li>Writing code for computations with dependencies is much harder than embarrassingly parallel computation</li>
+</ul>
+<h1 id="submitting-and-monitoring-parallel-jobs-on-savio-nicolas">Submitting and monitoring parallel jobs on Savio (Nicolas)</h1>
+<h1 id="parallelization-using-existing-software-christopher">Parallelization using existing software (Christopher)</h1>
+<h1 id="embarrassingly-parallel-computation-wei">Embarrassingly parallel computation (Wei)</h1>
+<h1 id="how-to-get-additional-help">How to get additional help</h1>
+<ul>
+<li>For technical issues and questions about using Savio:
+<ul>
+<li>brc-hpc-help@berkeley.edu</li>
+</ul></li>
+<li>For questions about computing resources in general, including cloud computing:
+<ul>
+<li>brc@berkeley.edu</li>
+<li>(virtual) office hours: Wed. 1:30-3:00 and Thur. 9:30-11:00</li>
+</ul></li>
+<li>For questions about data management (including HIPAA-protected data):
+<ul>
+<li>researchdata@berkeley.edu</li>
+<li>(virtual) office hours: Wed. 1:30-3:00 and Thur. 9:30-11:00</li>
+</ul></li>
+</ul>
+<p>Zoom links for virtual office hours:</p>
+<ul>
+<li>Wednesday: <a href="https://berkeley.zoom.us/j/504713509" class="uri">https://berkeley.zoom.us/j/504713509</a></li>
+<li>Thursday: <a href="https://berkeley.zoom.us/j/676161577" class="uri">https://berkeley.zoom.us/j/676161577</a></li>
+</ul>
+<h1 id="upcoming-events-and-hiring">Upcoming events and hiring</h1>
+<ul>
+<li>Research IT is hiring graduate students as domain consultants. Please chat with one of us if interested.</li>
+</ul>
+</body>
+</html>
