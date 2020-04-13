@@ -81,8 +81,9 @@ node (a few have 28))
   - *workers*: the individual processes that are carrying out a
     (parallelized) computation (e.g., Python, R, or MATLAB workers
     controlled from the master Python/R/MATLAB process).
- 
-# High-level considerations
+
+
+# Introduction: High-level considerations
 
 Parallelization:
 
@@ -102,16 +103,8 @@ off disk.
 - Moving data over the internet is even slower.
 
 
+# Introduction: Common Bottlenecks
 
-# Introduction: types of parallelization
-
-- Vector instructions (AVX2/AVX512)
-- Parallelize over CPU cores*
-- Parallelize over multiple nodes*
-
-\* focusing on these strategies today
-
-## Common Bottlenecks
 - Constrained by memory (RAM) bandwidth
   - For example, each thread is loading lots of data into memory
 - Constrained by filesystem bandwidth
@@ -125,13 +118,88 @@ Possible solutions:
 - Reduce number of filesystem operations
 - Find ways to reduce sequential bottlenecks
 
+# Introduction: Types of parallelization
+
+- Vector instructions (AVX2/AVX512)
+- Embarrasingly parallel computation of multiple jobs on one or more nodes*
+- Parallelize one job over CPU cores*
+- Parallelize one job over multiple nodes*
+
+\* focusing on these strategies today
+
 ## Embarrassingly parallel computation
+
+Aka: naturally, pleasingly, perfectly parallel
+
+You have a certain number of computational tasks to carry out and
+there are no dependencies between the tasks.
+
+E.g., process multiple datasets, or do a parameter sweep over multiple
+parameter sets.
+
+Tools:
+
+ - GNU parallel (standard tool)*
+ - [ht_helper](https://research-it.berkeley.edu/services/high-performance-computing/user-guide/hthelper-script)
+ - SLURM job arrays
+
+\* focusing on this approach today
 
 ## Threaded computations
 
+- Master process controls execution
+- Use of code libraries that allow the master to split a computation
+  across multiple software threads (still one process)
+- Threads share memory and data structures (beware 'race' conditions)
+- Examples: MKL and OpenBLAS linear algebra
+
+Threaded computation in standard software:
+
+- MATLAB threads some computations behind the scenes
+  - vectorized calculations
+  - linear algebra
+- If set up appropriately (true on Savio), R and Python rely on
+threaded linear algebra
+
+Rolling your own:
+- OpenMP (for C/C++/Fortran)
+- pthreads (for C/C++)
+- Intel threaded building blocks (TBB) (for C++)
+
 ## Multi-process computations
 
+Standard software (e.g., Python, R, MATLAB) allow you to start up
+multiple workers farm out independent computations.
+
+- Master process controls execution
+- Workers are separate processes
+- Can have more computational tasks than workers
+- Examples:
+  - Python Dask, ipyparallel, ray
+  - R future, foreach, parallel::parLapply
+  - MATLAB: parfor
+
+Many of these can run across multiple nodes but require **user** to set
+things up.
+
 ## Distributed computations
+
+Traditional high-performance computing (HPC) runs a large computation
+by (carefully) splitting the computation amongst communicating MPI
+workers (MPI 'tasks' or 'ranks').
+
+```
+mpicc foo.c -o foo
+mpirun -np 20 foo
+```
+
+Comments:
+ - multiple (e.g., 20 above) copies of the same executable are run at
+ once (SPMD)
+ - code behaves differently based on the ID ('rank') of the process
+ - processes communicate by sending 'messages'
+ - MPI can be used on a single node if desired.
+ - OpenMPI is the standard MPI library but there are others
 
 ## Other kinds of parallel computing
 

@@ -14,6 +14,71 @@
       span.underline{text-decoration: underline;}
       div.column{display: inline-block; vertical-align: top; width: 50%;}
   </style>
+  <style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; position: absolute; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; }
+pre.numberSource a.sourceLine:empty
+  { position: absolute; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
   <link rel="stylesheet" type="text/css" media="screen, projection, print"
     href="https://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
   <script src="https://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
@@ -118,8 +183,8 @@ April 21, 2020
 </ul></li>
 </ul>
 </div>
-<div id="high-level-considerations" class="slide section level1">
-<h1>High-level considerations</h1>
+<div id="introduction-high-level-considerations" class="slide section level1">
+<h1>Introduction: High-level considerations</h1>
 <p>Parallelization:</p>
 <ul>
 <li>Ideally we have no more (often the same number of) processes or processes+threads than the cores on a node.</li>
@@ -136,12 +201,80 @@ April 21, 2020
 <li>Moving data over the internet is even slower.</li>
 </ul>
 </div>
+<div id="introduction-common-bottlenecks" class="slide section level1">
+<h1>Introduction: Common Bottlenecks</h1>
+<ul>
+<li>Constrained by memory (RAM) bandwidth
+<ul>
+<li>For example, each thread is loading lots of data into memory</li>
+</ul></li>
+<li>Constrained by filesystem bandwidth
+<ul>
+<li>For example, 10 nodes all trying to read the same large file on scratch</li>
+</ul></li>
+<li><a href="https://en.wikipedia.org/wiki/Amdahl%27s_law">Amdahl’s Law</a>: Your task must take at least as long as the sequential part.
+<ul>
+<li>For example, if every task has to load a Python library that takes 10 seconds, then your job will take at least 10 seconds. If not all the tasks are running at the same time, then it will take much more than that.</li>
+</ul></li>
+</ul>
+<p>Possible solutions: - Fewer tasks per node will reduce strain on memory - You would still be given exclusive access to the node (and charged for that), so there will be a tradeoff here with the cost. It’s possible running fewer tasks will give you better performance so you take less time and save money, but you are also running fewer tasks at a time. The sweet spot will depend on your particular task. - Reduce number of filesystem operations - Find ways to reduce sequential bottlenecks</p>
+</div>
 <div id="introduction-types-of-parallelization" class="slide section level1">
-<h1>Introduction: types of parallelization</h1>
+<h1>Introduction: Types of parallelization</h1>
+<ul>
+<li>Vector instructions (AVX2/AVX512)</li>
+<li>Embarrasingly parallel computation of multiple jobs on one or more nodes*</li>
+<li>Parallelize one job over CPU cores*</li>
+<li>Parallelize one job over multiple nodes*</li>
+</ul>
+<p>* focusing on these strategies today</p>
 <h2 id="embarrassingly-parallel-computation">Embarrassingly parallel computation</h2>
+<p>Aka: naturally, pleasingly, perfectly parallel</p>
+<p>You have a certain number of computational tasks to carry out and there are no dependencies between the tasks.</p>
+<p>E.g., process multiple datasets, or do a parameter sweep over multiple parameter sets.</p>
+<p>Tools:</p>
+<ul>
+<li>GNU parallel (standard tool)*</li>
+<li><a href="https://research-it.berkeley.edu/services/high-performance-computing/user-guide/hthelper-script">ht_helper</a></li>
+<li>SLURM job arrays</li>
+</ul>
+<p>* focusing on this approach today</p>
 <h2 id="threaded-computations">Threaded computations</h2>
+<ul>
+<li>Master process controls execution</li>
+<li>Use of code libraries that allow the master to split a computation across multiple software threads (still one process)</li>
+<li>Threads share memory and data structures (beware ‘race’ conditions)</li>
+<li>Examples: MKL and OpenBLAS linear algebra</li>
+</ul>
+<p>Threaded computation in standard software:</p>
+<ul>
+<li>MATLAB threads some computations behind the scenes
+<ul>
+<li>vectorized calculations</li>
+<li>linear algebra</li>
+</ul></li>
+<li>If set up appropriately (true on Savio), R and Python rely on threaded linear algebra</li>
+</ul>
+<p>Rolling your own: - OpenMP (for C/C++/Fortran) - pthreads (for C/C++) - Intel threaded building blocks (TBB) (for C++)</p>
 <h2 id="multi-process-computations">Multi-process computations</h2>
+<p>Standard software (e.g., Python, R, MATLAB) allow you to start up multiple workers farm out independent computations.</p>
+<ul>
+<li>Master process controls execution</li>
+<li>Workers are separate processes</li>
+<li>Can have more computational tasks than workers</li>
+<li>Examples:
+<ul>
+<li>Python Dask, ipyparallel, ray</li>
+<li>R future, foreach, parallel::parLapply</li>
+<li>MATLAB: parfor</li>
+</ul></li>
+</ul>
+<p>Many of these can run across multiple nodes but require <strong>user</strong> to set things up.</p>
 <h2 id="distributed-computations">Distributed computations</h2>
+<p>Traditional high-performance computing (HPC) runs a large computation by (carefully) splitting the computation amongst communicating MPI workers (MPI ‘tasks’ or ‘ranks’).</p>
+<pre><code>mpicc foo.c -o foo
+mpirun -np 20 foo</code></pre>
+<p>Comments: - multiple (e.g., 20 above) copies of the same executable are run at once (SPMD) - code behaves differently based on the ID (‘rank’) of the process - processes communicate by sending ‘messages’ - MPI can be used on a single node if desired. - OpenMPI is the standard MPI library but there are others</p>
 <h2 id="other-kinds-of-parallel-computing">Other kinds of parallel computing</h2>
 <p>(find some pictures)</p>
 <ul>
@@ -177,8 +310,105 @@ April 21, 2020
 <li>Writing code for computations with dependencies is much harder than embarrassingly parallel computation</li>
 </ul>
 </div>
-<div id="submitting-and-monitoring-parallel-jobs-on-savio-nicolas" class="slide section level1">
-<h1>Submitting and monitoring parallel jobs on Savio (Nicolas)</h1>
+<div id="submitting-and-monitoring-jobs" class="slide section level1">
+<h1>Submitting and Monitoring Jobs</h1>
+<h2 id="available-hardware">Available Hardware</h2>
+<ul>
+<li>Partitions
+<ul>
+<li>savio (Intel Xeon E5-2670 v2): 164 nodes, 20 CPU cores each (Supports AVX2 instructions)</li>
+<li>savio2 (Intel Xeon E5-2670 v3): 136 nodes, 24 CPU cores each (Supports AVX2 instructions)</li>
+<li>and others…</li>
+</ul></li>
+<li>See the <a href="https://research-it.berkeley.edu/services/high-performance-computing/user-guide/savio-user-guide">Savio User Guide</a> for more details.</li>
+</ul>
+<h2 id="slurm-scheduler">Slurm Scheduler</h2>
+<p>Slurm is a job scheduler which allows you to request resources and queue your job to run when available.</p>
+<h3 id="slurm-environment-variables-for-parellelism">Slurm Environment Variables (for parellelism)</h3>
+<p>Slurm provides various environment variables that your program can read that may be useful for managing how to distribute tasks. These are taken from the full list of Slurm environment variables listed on the <a href="https://slurm.schedmd.com/sbatch.html">Slurm sbatch documentation</a>.</p>
+<ul>
+<li><code>$SLURM_NNODES</code> - Total number of nodes in the job’s resource allocation.</li>
+<li><code>$SLURM_NODELIST</code> - List of nodes allocated to the job.</li>
+<li><code>$SLURM_JOB_CPUS_PER_NODE</code> - Count of processors available to the job on this node.</li>
+<li><code>$SLURM_CPUS_PER_TASK</code> - Number of cpus requested per task.</li>
+</ul>
+<h2 id="submitting-parallel-jobs">Submitting Parallel Jobs</h2>
+<p>Examples taken from: <a href="https://research-it.berkeley.edu/services/high-performance-computing/running-your-jobs">Running your Jobs</a></p>
+<h3 id="omp-job">OMP Job</h3>
+<p>Notice that we set <code>--cpus-per-task</code> and then access the environment variable to set the OMP number of threads to use. If you have another way of doing multithreaded tasks, you can use the same <code>$SLURM_CPUS_PER_TASK</code> environment variable.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="co"># Job name:</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="co">#SBATCH --job-name=test</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="co"># Account:</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="co">#SBATCH --account=account_name</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="co"># Partition:</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="co">#SBATCH --partition=partition_name</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"><span class="co">#QoS:</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="co">#SBATCH --qos=qos_name</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="co"># Request one node:</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15"><span class="co">#SBATCH --nodes=1</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"><span class="co"># Specify one task:</span></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18"><span class="co">#SBATCH --ntasks-per-node=1</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="co"># Number of processors for single task needed for use case (example):</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21"><span class="co">#SBATCH --cpus-per-task=4</span></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23"><span class="co"># Wall clock limit:</span></a>
+<a class="sourceLine" id="cb2-24" data-line-number="24"><span class="co">#SBATCH --time=00:00:30</span></a>
+<a class="sourceLine" id="cb2-25" data-line-number="25"><span class="co">#</span></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26"><span class="co">## Command(s) to run (example):</span></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27"><span class="bu">export</span> <span class="va">OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK</span></a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"><span class="ex">./a.out</span></a></code></pre></div>
+<h3 id="openmpi-job">OpenMPI job</h3>
+<p>Notice we request 2 nodes and have 20 tasks per node. We could also leave out the number of nodes requested and simply say 40 tasks, and then Slurm would know we need 2 nodes since we said to use 1 CPU per task.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="co"># Job name:</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co">#SBATCH --job-name=test</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co"># Account:</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co">#SBATCH --account=account_name</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="co"># Partition:</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="co">#SBATCH --partition=partition_name</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11"><span class="co"># QoS:</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12"><span class="co">#SBATCH --qos=qos_name</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="co"># Number of nodes needed for use case:</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15"><span class="co">#SBATCH --nodes=2</span></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17"><span class="co"># Tasks per node based on number of cores per node (example):</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="co">#SBATCH --ntasks-per-node=20</span></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="co"># Processors per task:</span></a>
+<a class="sourceLine" id="cb3-21" data-line-number="21"><span class="co">#SBATCH --cpus-per-task=1</span></a>
+<a class="sourceLine" id="cb3-22" data-line-number="22"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-23" data-line-number="23"><span class="co"># Wall clock limit:</span></a>
+<a class="sourceLine" id="cb3-24" data-line-number="24"><span class="co">#SBATCH --time=00:00:30</span></a>
+<a class="sourceLine" id="cb3-25" data-line-number="25"><span class="co">#</span></a>
+<a class="sourceLine" id="cb3-26" data-line-number="26"><span class="co">## Command(s) to run (example):</span></a>
+<a class="sourceLine" id="cb3-27" data-line-number="27"><span class="ex">module</span> load gcc openmpi</a>
+<a class="sourceLine" id="cb3-28" data-line-number="28"><span class="ex">mpirun</span> ./a.out</a></code></pre></div>
+<h2 id="monitoring-jobs">Monitoring Jobs</h2>
+<p>How do I know if my job is using resources efficiently?</p>
+<h3 id="while-job-is-running">While job is running</h3>
+<p>Using <code>srun</code> and <code>htop</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ex">srun</span> -j <span class="va">$JOB_ID</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">uptime</span> <span class="co"># check the load</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="co"># use htop for a visual representation of CPU usage</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="ex">module</span> load htop</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="ex">htop</span></a></code></pre></div>
+<p>Using warewulf:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ex">wwall</span> -j <span class="va">$JOB_ID</span></a></code></pre></div>
+<h3 id="after-the-job-has-run">After the job has run</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ex">sacct</span> -j <span class="va">$JOB_ID</span> --format JobID,TotalCPU,CPUTime,NCPUs,Start,End</a></code></pre></div>
+<p>Not perfectly accurate, since it measures only the parent process of your job (not child processes). Ideally, <code>TotalCPU</code> will be as close as possible to <code>CPUTime</code>.</p>
 </div>
 <div id="parallelization-using-existing-software-christopher" class="slide section level1">
 <h1>Parallelization using existing software (Christopher)</h1>
