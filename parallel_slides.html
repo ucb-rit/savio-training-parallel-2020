@@ -250,7 +250,7 @@ April 21, 2020
 <p>E.g., process multiple datasets, or do a parameter sweep over multiple parameter sets.</p>
 <p>Tools:</p>
 <ul>
-<li>GNU parallel (standard tool)*</li>
+<li>GNU parallel (standard Linux tool)*</li>
 <li><a href="https://research-it.berkeley.edu/services/high-performance-computing/user-guide/hthelper-script">ht_helper (Savio-specific tool)</a></li>
 <li>SLURM job arrays (careful, one job per node…)</li>
 </ul>
@@ -260,7 +260,7 @@ April 21, 2020
 <h1>Types of parallelization: Threaded computations</h1>
 <ul>
 <li>Single process controls execution</li>
-<li>Use of code libraries that allow the process to split a computation across multiple software threads (still one process)</li>
+<li>Use of code libraries that allow the process to split a computation (see <a href="openmp_example.c">example</a> across multiple software threads (still one process)</li>
 </ul>
 <pre><code>  PID  USER  PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                  
 15876 zhang  20   0 17.321g 0.015t  91828 S 410.6  5.9  14158:58 python                                                   </code></pre>
@@ -320,10 +320,10 @@ April 21, 2020
 <p>Traditional high-performance computing (HPC) runs a large computation by (carefully) splitting the computation amongst communicating MPI workers (MPI ‘tasks’ or ‘ranks’).</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" data-line-number="1">$ <span class="ex">mpicc</span> hello_world.c -o hello_world</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">$ <span class="ex">mpirun</span> -np 20 hello_world</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co"># hello from task 2 out of 20</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co"># hello from task 9 out of 20</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co"># hello from task 0 out of 20</span></a>
-<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co"># hello from task 13 out of 20</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co"># Hello from MPI process 2 out of 20 on savio2.n0070</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co"># Hello from MPI process 0 out of 20 on savio2.n0096</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co"># Hello from MPI process 18 out of 20 on savio2.n0070</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co"># Hello from MPI process 7 out of 20 on savio2.n0098</span></a>
 <a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co"># &lt;snip&gt;</span></a></code></pre></div>
 <p>Comments:</p>
 <ul>

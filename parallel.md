@@ -146,7 +146,7 @@ parameter sets.
 
 Tools:
 
-   - GNU parallel (standard tool)*
+   - GNU parallel (standard Linux tool)*
    -
    [ht_helper (Savio-specific tool)](https://research-it.berkeley.edu/services/high-performance-computing/user-guide/hthelper-script)
    - SLURM job arrays (careful, one job per node...)
@@ -157,6 +157,7 @@ Tools:
 
 - Single process controls execution
 - Use of code libraries that allow the process to split a computation
+(see [example](openmp_example.c)
 across multiple software threads (still one process)
 ```
   PID  USER  PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                  
@@ -217,10 +218,10 @@ workers (MPI 'tasks' or 'ranks').
 ```bash
 $ mpicc hello_world.c -o hello_world
 $ mpirun -np 20 hello_world
-# hello from task 2 out of 20
-# hello from task 9 out of 20
-# hello from task 0 out of 20
-# hello from task 13 out of 20
+# Hello from MPI process 2 out of 20 on savio2.n0070
+# Hello from MPI process 0 out of 20 on savio2.n0096
+# Hello from MPI process 18 out of 20 on savio2.n0070
+# Hello from MPI process 7 out of 20 on savio2.n0098
 # <snip>
 ```
 
