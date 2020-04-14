@@ -377,6 +377,8 @@ Using warewulf:
 wwall -j $JOB_ID
 ```
 
+Using [metacluster](http://metacluster.lbl.gov/warewulf) (imprecise but can give general idea if you know which nodes you're on):
+
 ### After the job has run
 ```bash
 sacct -j $JOB_ID --format JobID,TotalCPU,CPUTime,NCPUs,Start,End
