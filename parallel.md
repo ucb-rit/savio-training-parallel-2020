@@ -1,6 +1,6 @@
 % Savio parallel processing training
 % April 21, 2020
-% Nicolas Chan, Christopher Hann-Soden, Chris Paciorek, Wei Feinstein
+% Nicolas Chan, Wei Feinstein, Christopher Hann-Soden, Chris Paciorek
 
 # Introduction
 
