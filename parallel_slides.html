@@ -476,6 +476,7 @@ April 21, 2020
 <a class="sourceLine" id="cb6-6" data-line-number="6"><span class="ex">htop</span></a></code></pre></div>
 <p>Using warewulf:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ex">wwall</span> -j <span class="va">$JOB_ID</span></a></code></pre></div>
+<p>Using <a href="http://metacluster.lbl.gov/warewulf">metacluster</a> (imprecise but can give general idea if you know which nodes you’re on):</p>
 <h3 id="after-the-job-has-run">After the job has run</h3>
 <div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ex">sacct</span> -j <span class="va">$JOB_ID</span> --format JobID,TotalCPU,CPUTime,NCPUs,Start,End</a></code></pre></div>
 <p>Not perfectly accurate, since it measures only the parent process of your job (not child processes). Ideally, <code>TotalCPU</code> will be as close as possible to <code>CPUTime</code>.</p>
@@ -485,6 +486,390 @@ April 21, 2020
 </div>
 <div id="embarrassingly-parallel-computation-wei" class="slide section level1">
 <h1>Embarrassingly parallel computation (Wei)</h1>
+<h2 id="lets-blast-to-align-protein-sequences">Let’s blast to align protein sequences</h2>
+<ul>
+<li>[wfeinstein@n0000 BRC]$ cat blast.sh</li>
+<li>blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq</li>
+<li>blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq</li>
+<li>blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq</li>
+</ul>
+<h2 id="parallel-on-one-compute-node">Parallel on one compute node</h2>
+<ul>
+<li>blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq &amp;</li>
+<li>blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq &amp;</li>
+<li>blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq &amp;</li>
+<li>wait</li>
+</ul>
+<h2 id="what-about-more-than-one-nodes">What about more than one nodes</h2>
+<ul>
+<li>ssh -n node1 “blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq” &amp;</li>
+<li>ssh -n node1 “blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq” &amp; …</li>
+<li>ssh -n node2 “blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq” &amp;</li>
+</ul>
+<h2 id="blast-with-gnu-parallel">Blast with GNU parallel</h2>
+<ul>
+<li>parallel -a blas.sh</li>
+</ul>
+<h2 id="what-is-gnu-parallel">What is GNU parallel</h2>
+<ul>
+<li>A shell tool for executing independent jobs in parallel using one or more computers.</li>
+<li>Dynamically distribute the commands across all of the nodes and cores being requested.</li>
+<li>A job can be a single command or a small script See the <a href="https://www.gnu.org/software/parallel/">GNN Parallel User Guide</a> for more details.</li>
+</ul>
+<h2 id="gnu-parallel-command-line">GNU parallel command line</h2>
+<ul>
+<li>A job can be a single command
+<ul>
+<li>parallel [options] [command [arguments]] &lt; list_of_arguments</li>
+</ul></li>
+<li>A script that has to be run for each of the lines in the input.
+<ul>
+<li>parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a taks.list)…</li>
+</ul></li>
+</ul>
+<h2 id="a-typical-use-case-one-application-fed-with-different-parameters">A typical use case: one application fed with different parameters</h2>
+<ul>
+<li>from the command line:
+<ul>
+<li>parallel [OPTIONS] COMMAND {} ::: TASKLIST</li>
+<li>e.g. parallel echo {} ::: a b c
+<ul>
+<li>[user@n0002 BRC]$ parallel echo {}{} ::: a b c<br />
+</li>
+<li>[user@n0002 BRC]$ parallel echo {}{} ::: a b c ::: e f g</li>
+</ul></li>
+</ul></li>
+<li>from input file
+<ul>
+<li>parallel [OPTIONS] COMMAND {} :::: TASKLIST.LST</li>
+<li>parallel –a TASKLIST.LST [OPTIONS] COMMAND {} e.g. [user@n0002 BRC]$ parallel -a blast.sh echo {}</li>
+</ul></li>
+</ul>
+<p>{}: parameter holder which is automatically replaced with one line from the tasklist.</p>
+<h2 id="on-one-compute-node">On one compute node</h2>
+<p>An example of how GNU Parallel handles task parameters as well as some command options</p>
+<ul>
+<li><p>[user@n0002 BRC]$ parallel –jobs 4 -a input.lst sh hostname.sh {} output/{./}.out</p></li>
+<li>[user@n0002 BRC]$ cat hostname.sh - #!/bin/bash - echo “using input: $1 $2” - echo <code>hostname</code> “copy input to output” &gt;$2 ; cat $1 &gt;&gt; $2</li>
+<li>[user@n0002 BRC]$ cat input.lst - input/test0.input - input/test1.input - …</li>
+<li>Whereas
+<ul>
+<li>–job: job# per node, 0: launch as much as core# permits.</li>
+<li>-a: task input list</li>
+<li>{}: 1st parameter to hostname.sh, taking one line from input.lst per task</li>
+<li>{./} remove input file extension and path</li>
+<li>output/{./}.out: 2nd parameter to hostname.sh</li>
+</ul></li>
+<li>More command flags:</li>
+<li><p>[user@n0002 BRC]$ paralle –slf hostfile –wd $WORKDIR –joblog runtask.log –resume –progres –jobs 4 -a input.lst sh hostname.sh {} output/{./}.out</p>
+<pre><code>  - --slf: node list
+  - --wd: workdir, default is $HOME
+  - --joblog: logging tasks having finished
+  - --resume: allow starting from the unfinished tasks  
+  - --progress: progress</code></pre></li>
+</ul>
+<h2 id="example-of-a-command-list">Example of a command list</h2>
+<ul>
+<li>[user@n0002 BRC]$ cat commands.lst - echo “host =” ‘<code>hostname</code>’ - sh -c “echo today date = ; date” - echo “ls =” <code>ls</code> - …</li>
+<li>[user@n0002 BRC] parallel -j 0 &lt; commands.lst</li>
+</ul>
+<h2 id="gnu-parallel-with-mpi-tasks">GNU Parallel with MPI tasks</h2>
+<ul>
+<li>Traditional MPI job
+<ul>
+<li>[user@n0002 BRC]$ mpirun -np 2 ./hello_rank Wei</li>
+</ul></li>
+<li>launch independent MPI tasks in parallel
+<ul>
+<li><p>[user@n0002 BRC]$ cat name.lst - Simba - Denali - John - …</p></li>
+<li><p>[user@n0002 BRC]$ parallel –slf hostfile –wd $WORKDIR -j -a name.lst 4 mpirun -np 2 ./hello_rank {}</p></li>
+</ul></li>
+</ul>
+<h2 id="sample-job-submission">Sample job submission</h2>
+<p>We request 2 nodes and have 20 tasks per node. We could also leave out the number of nodes requested and simply say 40 tasks, and then Slurm would know we need 2 nodes since we said to use 1 CPU per task.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co"># Job name:</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="co">#SBATCH --job-name=gnu-parallel</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="co">#</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="co"># Account:</span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="co">#SBATCH --account=account_name</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7"><span class="co">#</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="co"># Partition:</span></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="co">#SBATCH --partition=partition_name</span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10"><span class="co">#</span></a>
+<a class="sourceLine" id="cb10-11" data-line-number="11"><span class="co"># QoS:</span></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12"><span class="co">#SBATCH --qos=qos_name</span></a>
+<a class="sourceLine" id="cb10-13" data-line-number="13"><span class="co">#</span></a>
+<a class="sourceLine" id="cb10-14" data-line-number="14"><span class="co"># Number of nodes needed for use case:</span></a>
+<a class="sourceLine" id="cb10-15" data-line-number="15"><span class="co">#SBATCH --nodes=2</span></a>
+<a class="sourceLine" id="cb10-16" data-line-number="16"><span class="co">#</span></a>
+<a class="sourceLine" id="cb10-17" data-line-number="17"><span class="co"># Wall clock limit:</span></a>
+<a class="sourceLine" id="cb10-18" data-line-number="18"><span class="co">#SBATCH --time=2:00:00</span></a>
+<a class="sourceLine" id="cb10-19" data-line-number="19"><span class="co">#</span></a>
+<a class="sourceLine" id="cb10-20" data-line-number="20"><span class="co">## Command(s) to run (example):</span></a>
+<a class="sourceLine" id="cb10-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb10-22" data-line-number="22"><span class="ex">module</span> load gnu-parallel/2019.03.22</a>
+<a class="sourceLine" id="cb10-23" data-line-number="23"><span class="bu">export</span> <span class="va">WORKDIR=</span><span class="st">&quot;/your/path&quot;</span></a>
+<a class="sourceLine" id="cb10-24" data-line-number="24"><span class="bu">export</span> <span class="va">JOBS_PER_NODE=</span>8</a>
+<a class="sourceLine" id="cb10-25" data-line-number="25"><span class="bu">echo</span> <span class="va">$SLURM_JOB_NODELIST</span> <span class="kw">|</span><span class="fu">sed</span> s/\,/<span class="dt">\\</span>n/g <span class="op">&gt;</span>hostfile</a>
+<a class="sourceLine" id="cb10-26" data-line-number="26"><span class="bu">cd</span> <span class="va">$WORKDIR</span></a>
+<a class="sourceLine" id="cb10-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb10-28" data-line-number="28"><span class="va">PARALLEL=</span><span class="st">&quot;parallel --progress -j </span><span class="va">$JOBS_PER_NODE</span><span class="st"> --slf hostfile --wd </span><span class="va">$WORKDIR</span><span class="st"> --joblog runtask.log --resume&quot;</span></a>
+<a class="sourceLine" id="cb10-29" data-line-number="29"><span class="va">$PARALLEL</span> <span class="ex">-a</span> input.lst sh hostname.sh <span class="dt">{}</span> output/<span class="dt">{/.}</span>.out    </a></code></pre></div>
+<h2 id="more-flags">More flags</h2>
+<p>parallel –help</p>
+</div>
+<div id="parallelization-in-python-r-and-matlab" class="slide section level1">
+<h1>Parallelization in Python, R, and MATLAB</h1>
+<ul>
+<li><p>Support for threaded computations:</p>
+<ul>
+<li>Python: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)</li>
+<li>R: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)</li>
+<li>MATLAB: threaded linear algebra via MKL plus automatic threading of various functions</li>
+</ul></li>
+<li><p>Support for multi-process parallelization</p>
+<ul>
+<li>Python
+<ul>
+<li>Parallel map operations via <em>ipyparallel</em>, <em>Dask</em>, other packages</li>
+<li>Distributed data structures and calculations via <em>Dask</em></li>
+</ul></li>
+<li>R
+<ul>
+<li>Parallel for loops with <em>foreach</em> (via <em>doParallel</em>, <em>doFuture</em>, <em>doMPI</em>, <em>doSNOW</em>)</li>
+<li>parallel map operations with <code>future.apply::future_lapply</code>, <code>parallel::parLapply</code>, <code>parallel::mclapply</code></li>
+</ul></li>
+<li>MATLAB: Parallel for loops via <code>parfor</code></li>
+</ul></li>
+</ul>
+</div>
+<div id="dask-and-ipyparallel-in-python" class="slide section level1">
+<h1>Dask and ipyparallel in Python</h1>
+<p>Single node parallelization:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Python package</th>
+<th>key functions</th>
+<th>details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dask</td>
+<td>futures or <code>map</code></td>
+<td>‘processes’ or ‘distributed’ schedulers</td>
+</tr>
+<tr class="even">
+<td>Dask</td>
+<td>distributed data structures (arrays, dfs, bags)</td>
+<td>various schedulers</td>
+</tr>
+<tr class="odd">
+<td>ipyparallel</td>
+<td><code>apply</code> or <code>map</code></td>
+<td>start workers via <code>ipcluster</code></td>
+</tr>
+</tbody>
+</table>
+<p>Multi-node parallelization:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Python package</th>
+<th>key functions</th>
+<th>details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dask</td>
+<td>futures or <code>map</code></td>
+<td>‘distributed’ scheduler, start workers in shell</td>
+</tr>
+<tr class="even">
+<td>Dask</td>
+<td>distributed data structures (arrays, dfs, bags)</td>
+<td>see above</td>
+</tr>
+<tr class="odd">
+<td>ipyparallel</td>
+<td><code>apply</code> or <code>map</code></td>
+<td>start workers via <code>ipcontroller</code> + <code>srun ipengine</code></td>
+</tr>
+</tbody>
+</table>
+<p>See these materials for details:</p>
+<ul>
+<li><a href="https://github.com/berkeley-scf/tutorial-dask-future">Dask</a></li>
+<li><a href="https://research-it.berkeley.edu/services/high-performance-computing/using-python-savio#Parallel-Processing">ipyparallel</a></li>
+</ul>
+</div>
+<div id="multi-node-parallelization-in-python-via-dask" class="slide section level1">
+<h1>Multi-node parallelization in Python via Dask</h1>
+<p>Example SLURM script:</p>
+<pre><code>#!/bin/bash
+#SBATCH --partition=savio2
+#SBATCH --account=account_name
+#SBATCH --ntasks=48
+#SBATCH --time=00:20:00
+module load python/3.6
+export SCHED=$(hostname)
+dask-scheduler&amp;
+sleep 30
+srun dask-worker tcp://${SCHED}:8786 &amp;   # might need ${SCHED}.berkeley.edu
+sleep 60</code></pre>
+<p>Example Python code:</p>
+<pre><code># Connect to the cluster via the scheduler.
+import os, dask
+from dask.distributed import Client
+c = Client(address = os.getenv(&#39;SCHED&#39;) + &#39;:8786&#39;)
+n = 100000000
+p = 24
+
+# example use of futures
+futures = [dask.delayed(calc_mean)(i, n) for i in range(p)]
+results = dask.compute(*futures)
+
+# example use of map()
+inputs = [(i, n) for i in range(p)]
+future = c.map(calc_mean_vargs, inputs)
+results = c.gather(future)</code></pre>
+</div>
+<div id="future-and-other-packages-in-r" class="slide section level1">
+<h1>future and other packages in R</h1>
+<p>Single node parallelization:</p>
+<table>
+<thead>
+<tr class="header">
+<th>R package</th>
+<th>key functions</th>
+<th>details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>future</td>
+<td><code>future.apply::future_lapply</code></td>
+<td>‘multiprocess’ plan</td>
+</tr>
+<tr class="even">
+<td>future</td>
+<td><code>foreach</code> + <code>doFuture</code></td>
+<td>‘multiprocess’ plan</td>
+</tr>
+<tr class="odd">
+<td>foreach</td>
+<td><code>foreach</code></td>
+<td>use <code>doParallel</code></td>
+</tr>
+<tr class="even">
+<td>parallel</td>
+<td><code>parLapply</code></td>
+<td>use <code>makeCluster</code></td>
+</tr>
+<tr class="odd">
+<td>parallel</td>
+<td><code>mclapply</code></td>
+<td>only on Linux / MacOS as uses forking</td>
+</tr>
+</tbody>
+</table>
+<p>Multi-node parallelization:</p>
+<table>
+<thead>
+<tr class="header">
+<th>R package</th>
+<th>key functions</th>
+<th>details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>future</td>
+<td><code>future.apply::future_lapply</code></td>
+<td>‘cluster’ plan</td>
+</tr>
+<tr class="even">
+<td>future</td>
+<td><code>foreach</code> + <code>doFuture</code></td>
+<td>‘cluster’ plan</td>
+</tr>
+<tr class="odd">
+<td>foreach</td>
+<td><code>foreach</code></td>
+<td>use <code>doSNOW</code> or <code>doMPI</code></td>
+</tr>
+<tr class="even">
+<td>parallel</td>
+<td><code>parLapply</code></td>
+<td>use <code>makeCluster</code> with multiple hosts</td>
+</tr>
+</tbody>
+</table>
+<p>See these tutorials for details:</p>
+<ul>
+<li><a href="https://github.com/berkeley-scf/tutorial-dask-future">future</a></li>
+<li><a href="https://github.com/berkeley-scf/tutorial-parallel-basics">single node parallelization</a></li>
+<li><a href="https://github.com/berkeley-scf/tutorial-parallel-distributed">multiple node parallelization</a></li>
+</ul>
+</div>
+<div id="multi-node-parallelization-in-r-via-future" class="slide section level1">
+<h1>Multi-node parallelization in R via future</h1>
+<p>Example SLURM script:</p>
+<pre><code>#!/bin/bash
+#SBATCH --partition=savio2
+#SBATCH --account=account_name
+#SBATCH --ntasks=48
+#SBATCH --time=00:20:00
+module load r
+module load r-packages # often useful
+R CMD BATCH --no-save run.R run.Rout</code></pre>
+<p>Example R code:</p>
+<pre><code>library(future)
+workers &lt;- system(&#39;srun hostname&#39;, intern = TRUE)
+cl &lt;- parallel::makeCluster(workers)
+plan(cluster, workers = cl)
+
+# example use of parallel sapply to verify we&#39;re actually connected to the workers:
+future_sapply(seq_along(workers), function(i) system(&#39;hostname&#39;, intern = TRUE))
+
+# example use of foreach
+library(doFuture)
+results &lt;- foreach(i = 1:200) %dopar% {
+# your code here
+}</code></pre>
+<p>Note: One can also directly pass the vector of worker names to the <code>workers</code> argument of <code>plan()</code>, which should invoke <code>future::makeClusterPSOCK</code>, but I was having trouble with that hanging on Savio at one point.</p>
+</div>
+<div id="parfor-in-matlab-on-one-node" class="slide section level1">
+<h1>parfor in MATLAB on one node</h1>
+<p>Example job script:</p>
+<pre><code>#!/bin/bash
+#SBATCH --partition=savio2
+#SBATCH --account=account_name
+#SBATCH --cpus-per-task=24
+#SBATCH --time=00:20:00
+module load matlab
+matlab -nodisplay -nosplash -nodesktop -r run.m</code></pre>
+<p>Example MATLAB code:</p>
+<pre><code>parpool(str2num(getenv(&#39;SLURM_CPUS_PER_TASK&#39;)));
+parfor i = 1:n
+ % computational code here
+ end</code></pre>
+</div>
+<div id="parfor-in-matlab-on-multiple-nodes" class="slide section level1">
+<h1>parfor in MATLAB on multiple nodes</h1>
+<ul>
+<li>See <a href="https://research-it.berkeley.edu/services/high-performance-computing/using-matlab-savio/running-matlab-jobs-across-multiple-savio">these instructions for MATLAB version 2017b</a>
+<ul>
+<li>limited to 32 workers (but each worker can do threaded computations)</li>
+</ul></li>
+<li>For use with MATLAB 2019b, please email us.
+<ul>
+<li>no limit on the number of workers</li>
+</ul></li>
+</ul>
 </div>
 <div id="how-to-get-additional-help" class="slide section level1">
 <h1>How to get additional help</h1>

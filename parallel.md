@@ -10,7 +10,7 @@ Much of this material is based on the extensive Savio documention we
 have prepared and continue to prepare, available at our new
 documentation site: [https://docs-research-it.berkeley.edu/services/high-performance-computing](https://docs-research-it.berkeley.edu/services/high-performance-computing) as well as our old site: [http://research-it.berkeley.edu/services/high-performance-computing](http://research-it.berkeley.edu/services/high-performance-computing).
 
-The materials for this tutorial are available using git at the short URL ([https://tinyurl.com/brc-feb20](https://tinyurl.com/brc-apr20)), the  GitHub URL ([https://github.com/ucb-rit/savio-training-parallel-2020](https://github.com/ucb-rit/savio-training-parallel-2020)), or simply as a [zip file](https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip).
+The materials for this tutorial are available using git at the short URL ([https://tinyurl.com/brc-apr20](https://tinyurl.com/brc-apr20)), the  GitHub URL ([https://github.com/ucb-rit/savio-training-parallel-2020](https://github.com/ucb-rit/savio-training-parallel-2020)), or simply as a [zip file](https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip).
 
 # Outline
 
@@ -33,7 +33,6 @@ The materials for this tutorial are available using git at the short URL ([https
    - GNU parallel
    - Job submission details
  - Parallelization in Python, R, and MATLAB (time permitting)
-   - High-level overview: threading versus multi-process computation
    - Dask and ipyparallel in Python
    - future and other packages in R
    - parfor in MATLAB
@@ -387,7 +386,7 @@ Not perfectly accurate, since it measures only the parent process of your job (n
 
 # Parallelization using existing software (Christopher)
 
-# Embarrassingly parallel computation (Wei)
+# Embarrassingly parallel computation
 
 
 ## Let's blast to align protein sequences 
@@ -523,6 +522,187 @@ $PARALLEL -a input.lst sh hostname.sh {} output/{/.}.out
 ## More flags 
 parallel --help
 
+
+# Parallelization in Python, R, and MATLAB
+
+- Support for threaded computations:
+
+  - Python: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)
+  - R: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)
+  - MATLAB: threaded linear algebra via MKL plus automatic threading of
+various functions
+
+- Support for multi-process parallelization
+
+  - Python
+    - Parallel map operations via  *ipyparallel*, *Dask*, other packages
+    - Distributed data structures and calculations via *Dask*
+  - R
+    - Parallel for loops with *foreach* (via *doParallel*, *doFuture*, *doMPI*, *doSNOW*)
+    - parallel map operations with `future.apply::future_lapply`, `parallel::parLapply`, `parallel::mclapply`
+  - MATLAB: Parallel for loops via `parfor`
+
+# Dask and ipyparallel in Python
+
+Single node parallelization:
+
+|Python package|key functions|details|
+|------|-------|-------|
+|Dask|futures or `map`| 'processes' or 'distributed' schedulers|
+|Dask|distributed data structures (arrays, dfs, bags)|various schedulers|
+|ipyparallel|`apply` or `map`|start workers via `ipcluster`|
+
+Multi-node parallelization:
+
+|Python package|key functions|details|
+|------|-------|-------|
+|Dask|futures or `map`| 'distributed' scheduler, start workers in shell|
+|Dask|distributed data structures (arrays, dfs, bags)|see above|
+|ipyparallel|`apply` or `map`|start workers via `ipcontroller` + `srun ipengine`|
+
+See these materials for details:
+
+- [Dask](https://github.com/berkeley-scf/tutorial-dask-future)
+- [ipyparallel](https://research-it.berkeley.edu/services/high-performance-computing/using-python-savio#Parallel-Processing)
+
+
+# Multi-node parallelization in Python via Dask
+
+Example SLURM script:
+
+```
+#!/bin/bash
+#SBATCH --partition=savio2
+#SBATCH --account=account_name
+#SBATCH --ntasks=48
+#SBATCH --time=00:20:00
+module load python/3.6
+export SCHED=$(hostname)
+dask-scheduler&
+sleep 30
+srun dask-worker tcp://${SCHED}:8786 &   # might need ${SCHED}.berkeley.edu
+sleep 60
+```
+
+Example Python code:
+
+```
+ # Connect to the cluster via the scheduler.
+import os, dask
+from dask.distributed import Client
+c = Client(address = os.getenv('SCHED') + ':8786')
+n = 100000000
+p = 24
+
+ # example use of futures
+futures = [dask.delayed(calc_mean)(i, n) for i in range(p)]
+results = dask.compute(*futures)
+
+ # example use of map()
+inputs = [(i, n) for i in range(p)]
+future = c.map(calc_mean_vargs, inputs)
+results = c.gather(future)
+```
+
+
+# future and other packages in R
+
+Single node parallelization:
+
+|R package|key functions|details|
+|------|-------|-------|
+|future|`future.apply::future_lapply`| 'multiprocess' plan|
+|future|`foreach` + `doFuture`|'multiprocess' plan|
+|foreach|`foreach`|use `doParallel`|
+|parallel|`parLapply`|use `makeCluster`|
+|parallel|`mclapply`|only on Linux / MacOS as uses forking|
+
+Multi-node parallelization:
+
+|R package|key functions|details|
+|------|-------|-------|
+|future|`future.apply::future_lapply`| 'cluster' plan|
+|future|`foreach` + `doFuture`|'cluster' plan|
+|foreach|`foreach`|use `doSNOW` or `doMPI`|
+|parallel|`parLapply`|use `makeCluster` with multiple hosts|
+
+See these tutorials for details:
+
+- [future](https://github.com/berkeley-scf/tutorial-dask-future)
+- [single node parallelization](https://github.com/berkeley-scf/tutorial-parallel-basics)
+- [multiple node parallelization](https://github.com/berkeley-scf/tutorial-parallel-distributed)
+
+
+# Multi-node parallelization in R via future
+
+Example SLURM script:
+
+```
+#!/bin/bash
+#SBATCH --partition=savio2
+#SBATCH --account=account_name
+#SBATCH --ntasks=48
+#SBATCH --time=00:20:00
+module load r
+module load r-packages # often useful
+R CMD BATCH --no-save run.R run.Rout
+```
+
+Example R code:
+
+```
+library(future)
+workers <- system('srun hostname', intern = TRUE)
+cl <- parallel::makeCluster(workers)
+plan(cluster, workers = cl)
+
+ # example use of parallel sapply to verify we're actually connected to the workers
+future_sapply(seq_along(workers), function(i) system('hostname', intern = TRUE))
+
+ # example use of foreach
+library(doFuture)
+results <- foreach(i = 1:200) %dopar% {
+   # your code here
+}
+```
+
+Note: One can also directly pass the vector of worker names to the `workers` argument of `plan()`, which should invoke `future::makeClusterPSOCK`, but I was having trouble with that hanging on Savio at one point.
+
+
+# parfor in MATLAB on one node
+
+Example job script:
+
+```
+#!/bin/bash
+#SBATCH --partition=savio2
+#SBATCH --account=account_name
+#SBATCH --cpus-per-task=24
+#SBATCH --time=00:20:00
+module load matlab
+matlab -nodisplay -nosplash -nodesktop -r run.m
+```
+
+Example MATLAB code:
+
+```
+parpool(str2num(getenv('SLURM_CPUS_PER_TASK')));
+parfor i = 1:n
+ % computational code here
+end
+```
+
+
+# parfor in MATLAB on multiple nodes
+
+- See
+[these instructions for MATLAB version 2017b](https://research-it.berkeley.edu/services/high-performance-computing/using-matlab-savio/running-matlab-jobs-across-multiple-savio)
+   - limited to 32 workers (but each worker can do threaded
+   computations)
+- For use with MATLAB 2019b, please email us.
+   - no limit on the number of workers
+
+
 # How to get additional help
 
  - For technical issues and questions about using Savio: 
@@ -534,10 +714,7 @@ parallel --help
     - researchdata@berkeley.edu
     - (virtual) office hours: Wed. 1:30-3:00 and Thur. 9:30-11:00
 
-Zoom links for virtual office hours:
-
- - Wednesday:  [https://berkeley.zoom.us/j/504713509](https://berkeley.zoom.us/j/504713509)
- - Thursday:  [https://berkeley.zoom.us/j/676161577](https://berkeley.zoom.us/j/676161577)
+Zoom links for virtual office hours: [https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting](https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting)
 
 # Upcoming events and hiring
 
