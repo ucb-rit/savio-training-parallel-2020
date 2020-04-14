@@ -164,6 +164,7 @@ across multiple software threads (still one process)
 15876 zhang  20   0 17.321g 0.015t  91828 S 410.6  5.9  14158:58 python                                                   
 ```
 - Threads share memory and data structures (beware 'race' conditions)
+- Single node ONLY!
 
 <center><img src="threads.gif"></center>
 
