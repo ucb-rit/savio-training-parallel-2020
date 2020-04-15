@@ -705,10 +705,34 @@ today date = Tue Apr 14 22:51:17 PDT 2020
 
 # Example: MPI applications using GNU Parallel
 - Traditional MPI job
-	`[user@n0002 BRC]$ mpirun -np 2 ./hello_rank Wei  `
+```	
+[user@n0002 BRC]$ mpirun -np 2 ./hello_rank 1 
+Hello1 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 1 out of 2 processors
+
+[user@n0002 BRC]$ time for index in `seq 40`; do  mpirun -np 2 ./a.out $index; done
+Hello1 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 1 out of 2 processors
+Hello2 from processor n0030.es1, rank 0 out of 2 processors
+Hello2 from processor n0030.es1, rank 1 out of 2 processors
+...
+real	0m11.473s
+user	0m3.486s
+sys	0m7.072s
+```
 - launch independent MPI tasks in parallel 
 ```
-[user@n0002 BRC]$ parallel --slf hostfile --wd $WORKDIR -j 10 mpirun -np 2 ./hello_rank
+[user@n0002 BRC]$ time parallel -j 10 mpirun -np 2 ./hello_rank ::: `seq 40`
+Hello2 from processor n0030.es1, rank 1 out of 2 processors
+Hello2 from processor n0030.es1, rank 0 out of 2 processors
+Hello5 from processor n0030.es1, rank 1 out of 2 processors
+Hello5 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 1 out of 2 processors
+...
+real	0m3.565s
+user	0m3.208s
+sys	0m9.577s
 ```
 # Job submission sample
 We request 2 nodes as the showcase. Number of nodes to request depends on the the tasklist size. 
