@@ -576,7 +576,7 @@ Abaqus is a popular finite element analysis software. Physicist, engineers, and 
 
 # Embarrassingly parallel computation
 
-# Let's blast to align protein sequences 
+### Let's blast to align protein sequences 
 
 ```
 [user@n0002 BRC]$ cat blast.sh 
@@ -617,14 +617,17 @@ ssh -n node2 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.s
 ### from the command line:
    - parallel [OPTIONS] COMMAND {} ::: TASKLIST   
    - **{}**: parameter holder which is automatically replaced with one line from the tasklist.
-```[user@n0002 BRC]$ parallel echo {} ::: a b c
+```
+[user@n0002 BRC]$ parallel echo {} ::: a b c
    a
    b
-   c    			
+   c   
+   
    [user@n0002 BRC]$ parallel --link echo {1}{2} ::: a b c ::: 1 2 3
    a 1
    b 2   
    c 3
+   
    [user@n0002 BRC]$ parallel echo {} ::: `seq 3`
    1
    2
@@ -635,22 +638,26 @@ ssh -n node2 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.s
     - parallel –a TASKLIST.LST [OPTIONS] COMMAND {} 
 ```
 [user@n0002 BRC]$ parallel echo {} :::: blast.sh 
+
 [user@n0002 BRC]$ parallel -a blast.sh echo {}
 blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq 
 blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
 blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
 ```
 # Examples
+
 **Task parameters and command options** 
 ```
 [user@n0002 BRC]$ cat hostname.sh
 		 #!/bin/bash
 		 echo "using input: $1 $2"
 		 echo `hostname` "copy input to output " >$2 ; cat $1 >> $2 
+		 
 [user@n0002 BRC]$ cat input.lst
 		 input/test0.input
    		 input/test1.input
 		 ...
+		 
 [user@n0002 BRC]$ parallel -j 4 -a input.lst ./hostname.sh {} output/{./}.out
 ```
 - Whereas
@@ -658,26 +665,41 @@ blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
 	- -a: task input list
 	- {}: 1st parameter to hostname.sh, taking one line from input.lst per task
 	- {./} remove input file extension and path
-	- output/{./}.out: 2nd parameter to hostname.sh	
+	- output/{./}.out: 2nd parameter to hostname.sh		
 
 **More command options**
-[user@n0002 BRC]$  paralle --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out```		   
+
+```
+[user@n0002 BRC]$  paralle --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out
+```
+
 	- --slf: sshloginfile (node list)
 	- --wd: workdir, default is $HOME
 	- --joblog: log of completed tasks
 	- --resume: resume from previous unfinished task 
 	- --progress: display task progress as standard output
-	
+
+
+# logfile
+```
+[wfeinstein@n0002 BRC]$ head -3 runtask.log
+Seq	Host	Starttime	JobRuntime	Send	Receive	Exitval	Signal	Command
+10	:	1586815193.782	     0.043	0	48	0	0	sh hostname.sh input/test9.input output/test9.out
+2	:	1586815193.757	     0.094	0	48	0	0	sh hostname.sh input/test1.input output/test1.out
+```
+Logfile pairs with the resume option. Note the logfile has to be removed should you rerun the parameter set at debugging state
 # Example: input from a command list 
-```[user@n0002 BRC]$ cat commands.lst 
+
+```
+[user@n0002 BRC]$ cat commands.lst 
 	echo "host = " '`hostname`'
 	sh -c "echo today date = ; date" 
 	echo "ls = " `ls`
 	...
+	
 [user@n0002 BRC] parallel -j 0 < commands.lst
-host =  n0002.scs00
-today date =
-Tue Apr 14 22:51:17 PDT 2020
+host =  ln002.brc
+today date = Tue Apr 14 22:51:17 PDT 2020
 ...
 ```
 
@@ -693,25 +715,15 @@ Tue Apr 14 22:51:17 PDT 2020
 [user@n0002 BRC]$ parallel --slf hostfile --wd $WORKDIR -j -a name.lst 4 mpirun -np 2 ./hello_rank {}
 ```
 # Job submission sample
-We request 2 nodes as the showcase. 
+We request 2 nodes as the showcase. Number of nodes to request depends on the the tasklist size. 
 
-```bash
+```
 #!/bin/bash
-# Job name:
 #SBATCH --job-name=gnu-parallel
-#
-# Account:
 #SBATCH --account=account_name
-#
-# Partition:
 #SBATCH --partition=partition_name
-#
-# Number of nodes needed for use case:
 #SBATCH --nodes=2
-#
-# Wall clock limit:
 #SBATCH --time=2:00:00
-#
 ## Command(s) to run (example):
 
 module load gnu-parallel/2019.03.22
@@ -723,7 +735,6 @@ cd $WORKDIR
 PARALLEL="parallel --progress -j $JOBS_PER_NODE --slf hostfile --wd $WORKDIR --joblog runtask.log --resume"
 $PARALLEL -a input.lst sh hostname.sh {} output/{/.}.out    
 ```
-
 # Parallelization in Python, R, and MATLAB
 
 - Support for threaded computations:
