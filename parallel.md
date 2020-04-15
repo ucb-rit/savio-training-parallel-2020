@@ -576,105 +576,125 @@ Abaqus is a popular finite element analysis software. Physicist, engineers, and 
 
 # Embarrassingly parallel computation
 
+# Let's blast to align protein sequences 
 
-## Let's blast to align protein sequences 
-- [wfeinstein@n0000 BRC]$ cat blast.sh 
-- blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq 
-- blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
-- blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
-
-## Parallel on one compute node 
-- blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq &
-- blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq &
-- blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq &
-- wait
-
-## What about more than one nodes
-- ssh -n node1 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq" &
-- ssh -n node1 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq" &
+```
+[user@n0002 BRC]$ cat blast.sh 
+blastp -query *protein1.faa* -db db/img_v400_PROT.00 -out *protein1.seq* 
+blastp -query *protein2.faa* -db db/img_v400_PROT.00 -out *protein2.seq* 
+blastp -query *protein3.faa* -db db/img_v400_PROT.00 -out *protein3.seq*
+```
+### Parallel on one compute node 
+```
+blastp -query *protein1.faa* -db db/img_v400_PROT.00 -out *protein1.seq* &
+blastp -query *protein2.faa* -db db/img_v400_PROT.00 -out *protein2.seq* &
+blastp -query *protein3.faa* -db db/img_v400_PROT.00 -out *protein3.seq* &
+wait
+```
+### What about more than one nodes
+```
+ssh -n node1 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq" &
+ssh -n node1 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq" &
 ...
-- ssh -n node2 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq" &
+ssh -n node2 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq" &
+```
+### Blast with GNU parallel
+`parallel -a blast.sh`
 
-## Blast with GNU parallel
-- parallel -a blas.sh
-
-## What is GNU parallel
+# What is GNU parallel
 - A shell tool for executing independent jobs in parallel using one or more computers. 
 - Dynamically distribute the commands across all of the nodes and cores being requested. 
 - A job can be a single command or a small script 
-   See the [GNN Parallel User Guide](https://www.gnu.org/software/parallel/) for more details.
+- See the [GNN Parallel User Guide](https://www.gnu.org/software/parallel/) for more details.
   
-## GNU parallel command line
+### GNU parallel command line
 - A job can be a single command 
-	- parallel [options] [command [arguments]] < list_of_arguments
-- A script that has to be run for each of the lines in the input. 
-	- parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a taks.list)...
+    - parallel [options] [command [arguments]] < list_of_arguments
+- A script that has to be run for each of the lines in the input
+    - parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a taks.list)
 
-## A typical use case: one application fed with different parameters 
-- from the command line:
-	- parallel [OPTIONS] COMMAND {} ::: TASKLIST
-	- e.g. parallel echo {} ::: a b c 
-	     - [user@n0002 BRC]$ parallel echo {}{} ::: a b c  
-	     - [user@n0002 BRC]$ parallel echo {}{} ::: a b c ::: e f g 
-
-- from input file
-	- parallel [OPTIONS] COMMAND {} :::: TASKLIST.LST
-	- parallel –a TASKLIST.LST [OPTIONS] COMMAND {}
-	e.g. [user@n0002 BRC]$ parallel -a blast.sh echo {}
-	
-{}: parameter holder which is automatically replaced with one line from the tasklist.
-
-## On one compute node
-An example of how GNU Parallel handles task parameters as well as some command options 
-
-- [user@n0002 BRC]$ parallel --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out
-
-- [user@n0002 BRC]$ cat hostname.sh
-		- #!/bin/bash
-		- echo "using input: $1 $2"
-		- echo `hostname` "copy input to output " >$2 ; cat $1 >> $2 
-- [user@n0002 BRC]$ cat input.lst
-		- input/test0.input
-   		- input/test1.input
-		- ...
+# A typical use case: single application fed with different parameter sets
+### from the command line:
+   - parallel [OPTIONS] COMMAND {} ::: TASKLIST   
+   - **{}**: parameter holder which is automatically replaced with one line from the tasklist.
+```[user@n0002 BRC]$ parallel echo {} ::: a b c
+   a
+   b
+   c    			
+   [user@n0002 BRC]$ parallel --link echo {1}{2} ::: a b c ::: 1 2 3
+   a 1
+   b 2   
+   c 3
+   [user@n0002 BRC]$ parallel echo {} ::: `seq 3`
+   1
+   2
+   3
+```
+### from an input file
+    - parallel [OPTIONS] COMMAND {} :::: TASKLIST.LST
+    - parallel –a TASKLIST.LST [OPTIONS] COMMAND {} 
+```
+[user@n0002 BRC]$ parallel echo {} :::: blast.sh 
+[user@n0002 BRC]$ parallel -a blast.sh echo {}
+blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq 
+blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
+blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
+```
+# Examples
+**Task parameters and command options** 
+```
+[user@n0002 BRC]$ cat hostname.sh
+		 #!/bin/bash
+		 echo "using input: $1 $2"
+		 echo `hostname` "copy input to output " >$2 ; cat $1 >> $2 
+[user@n0002 BRC]$ cat input.lst
+		 input/test0.input
+   		 input/test1.input
+		 ...
+[user@n0002 BRC]$ parallel -j 4 -a input.lst ./hostname.sh {} output/{./}.out
+```
 - Whereas
-   	- --job: job# per node, 0: launch as much as core# permits.
+   	- -j: job# per node, 0: launch as much as core# permits.
 	- -a: task input list
 	- {}: 1st parameter to hostname.sh, taking one line from input.lst per task
 	- {./} remove input file extension and path
-	- output/{./}.out: 2nd parameter to hostname.sh
+	- output/{./}.out: 2nd parameter to hostname.sh	
+
+**More command options**
+[user@n0002 BRC]$  paralle --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out```		   
+	- --slf: sshloginfile (node list)
+	- --wd: workdir, default is $HOME
+	- --joblog: log of completed tasks
+	- --resume: resume from previous unfinished task 
+	- --progress: display task progress as standard output
 	
-- More command flags:
-- [user@n0002 BRC]$  paralle --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out
-		   
-		- --slf: node list
-		- --wd: workdir, default is $HOME
-		- --joblog: logging tasks having finished
-		- --resume: allow starting from the unfinished tasks  
-		- --progress: progress
+# Example: input from a command list 
+```[user@n0002 BRC]$ cat commands.lst 
+	echo "host = " '`hostname`'
+	sh -c "echo today date = ; date" 
+	echo "ls = " `ls`
+	...
+[user@n0002 BRC] parallel -j 0 < commands.lst
+host =  n0002.scs00
+today date =
+Tue Apr 14 22:51:17 PDT 2020
+...
+```
 
-## Example of a command list
-- [user@n0002 BRC]$ cat commands.lst 
-		- echo "host = " '`hostname`'
-		- sh -c "echo today date = ; date" 
-		- echo "ls = " `ls`
-		- ...
-- [user@n0002 BRC] parallel -j 0 < commands.lst
-
-## GNU Parallel with MPI tasks
+# Example: MPI applications using GNU Parallel
 - Traditional MPI job
-	- [user@n0002 BRC]$ mpirun -np 2 ./hello_rank Wei
-- launch independent MPI tasks in parallel
-	- [user@n0002 BRC]$ cat name.lst 
+	`[user@n0002 BRC]$ mpirun -np 2 ./hello_rank Wei  `
+- launch independent MPI tasks in parallel 
+```[user@n0002 BRC]$ cat name.lst 
 			- Simba
 			- Denali
 			- John
 			- ...
-	
-	- [user@n0002 BRC]$ parallel --slf hostfile --wd $WORKDIR -j -a name.lst 4 mpirun -np 2 ./hello_rank {}
+[user@n0002 BRC]$ parallel --slf hostfile --wd $WORKDIR -j -a name.lst 4 mpirun -np 2 ./hello_rank {}
+```
+# Job submission sample
+We request 2 nodes as the showcase. 
 
-## Sample job submission 
-We request 2 nodes and have 20 tasks per node. We could also leave out the number of nodes requested and simply say 40 tasks, and then Slurm would know we need 2 nodes since we said to use 1 CPU per task.
 ```bash
 #!/bin/bash
 # Job name:
@@ -685,9 +705,6 @@ We request 2 nodes and have 20 tasks per node. We could also leave out the numbe
 #
 # Partition:
 #SBATCH --partition=partition_name
-#
-# QoS:
-#SBATCH --qos=qos_name
 #
 # Number of nodes needed for use case:
 #SBATCH --nodes=2
@@ -700,16 +717,12 @@ We request 2 nodes and have 20 tasks per node. We could also leave out the numbe
 module load gnu-parallel/2019.03.22
 export WORKDIR="/your/path"
 export JOBS_PER_NODE=8
-echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g >hostfile
+echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g > hostfile
 cd $WORKDIR
 
 PARALLEL="parallel --progress -j $JOBS_PER_NODE --slf hostfile --wd $WORKDIR --joblog runtask.log --resume"
 $PARALLEL -a input.lst sh hostname.sh {} output/{/.}.out    
-
 ```
-## More flags 
-parallel --help
-
 
 # Parallelization in Python, R, and MATLAB
 
