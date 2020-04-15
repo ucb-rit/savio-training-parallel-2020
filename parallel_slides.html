@@ -17,7 +17,7 @@
   <style type="text/css">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+a.sourceLine:empty { height: 1.2em; position: absolute; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -30,11 +30,13 @@ code.sourceCode { white-space: pre-wrap; }
 a.sourceLine { text-indent: -1em; padding-left: 1em; }
 }
 pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
+  { position: relative; }
+pre.numberSource a.sourceLine:empty
+  { position: absolute; }
 pre.numberSource a.sourceLine::before
-  { content: attr(title);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+  { content: attr(data-line-number);
+    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -93,13 +95,13 @@ April 21, 2020
 <div id="introduction" class="slide section level1">
 <h1>Introduction</h1>
 <p>We’ll do this mostly as a demonstration. We encourage you to login to your account and try out the various examples yourself as we go through them.</p>
-<p>Much of this material is based on the extensive Savio documention we have prepared and continue to prepare, available at our new documentation site: <a href="https://docs-research-it.berkeley.edu/services/high-performance-computing">https://docs-research-it.berkeley.edu/services/high-performance-computing</a> as well as our old site: <a href="http://research-it.berkeley.edu/services/high-performance-computing">http://research-it.berkeley.edu/services/high-performance-computing</a>.</p>
-<p>The materials for this tutorial are available using git at the short URL (<a href="https://tinyurl.com/brc-apr20">https://tinyurl.com/brc-apr20</a>), the GitHub URL (<a href="https://github.com/ucb-rit/savio-training-parallel-2020">https://github.com/ucb-rit/savio-training-parallel-2020</a>), or simply as a <a href="https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip">zip file</a>.</p>
+<p>Much of this material is based on the extensive Savio documention we have prepared and continue to prepare, available at our new documentation site: <a href="https://docs-research-it.berkeley.edu/services/high-performance-computing" class="uri">https://docs-research-it.berkeley.edu/services/high-performance-computing</a> as well as our old site: <a href="http://research-it.berkeley.edu/services/high-performance-computing" class="uri">http://research-it.berkeley.edu/services/high-performance-computing</a>.</p>
+<p>The materials for this tutorial are available using git at the short URL (<a href="https://tinyurl.com/brc-apr20" class="uri">https://tinyurl.com/brc-apr20</a>), the GitHub URL (<a href="https://github.com/ucb-rit/savio-training-parallel-2020" class="uri">https://github.com/ucb-rit/savio-training-parallel-2020</a>), or simply as a <a href="https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip">zip file</a>.</p>
 </div>
 <div id="outline" class="slide section level1">
 <h1>Outline</h1>
 <ul>
-<li>Introduction
+<li>Introduction (Chris)
 <ul>
 <li>Hardware</li>
 <li>Parallel processing terms and concepts</li>
@@ -111,23 +113,23 @@ April 21, 2020
 </ul></li>
 <li>Considerations in parallelizing your work</li>
 </ul></li>
-<li>Submitting and monitoring parallel jobs on Savio
+<li>Submitting and monitoring parallel jobs on Savio (Nicolas)
 <ul>
 <li>Job submission flags</li>
 <li>MPI- and openMP- based submission examples</li>
 <li>Monitoring jobs to check parallelization</li>
 </ul></li>
-<li>Parallelization using existing software
+<li>Parallelization using existing software (Christopher)
 <ul>
 <li>How to look at documentation to understand parallel capabilities</li>
 <li>Specific examples</li>
 </ul></li>
-<li>Embarrassingly parallel computation
+<li>Embarrassingly parallel computation (Wei)
 <ul>
 <li>GNU parallel</li>
 <li>Job submission details</li>
 </ul></li>
-<li>Parallelization in Python, R, and MATLAB (time permitting)
+<li>Parallelization in Python, R, and MATLAB (Chris; time permitting)
 <ul>
 <li>Dask and ipyparallel in Python</li>
 <li>future and other packages in R</li>
@@ -268,7 +270,7 @@ April 21, 2020
 <center>
 <img src="threads.gif">
 </center>
-<p>(image provided by <a href="https://computing.llnl.gov/tutorials/openMP">https://computing.llnl.gov/tutorials/openMP</a>.)</p>
+<p>(image provided by <a href="https://computing.llnl.gov/tutorials/openMP" class="uri">https://computing.llnl.gov/tutorials/openMP</a>.)</p>
 </div>
 <div id="types-of-parallelization-threaded-computations-part-2" class="slide section level1">
 <h1>Types of parallelization: Threaded computations (part 2)</h1>
@@ -316,13 +318,13 @@ April 21, 2020
 <div id="types-of-parallelization-distributed-computations" class="slide section level1">
 <h1>Types of parallelization: Distributed computations</h1>
 <p>Traditional high-performance computing (HPC) runs a large computation by (carefully) splitting the computation amongst communicating MPI workers (MPI ‘tasks’ or ‘ranks’).</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" title="1">$ <span class="ex">mpicc</span> hello_world.c -o hello_world</a>
-<a class="sourceLine" id="cb3-2" title="2">$ <span class="ex">mpirun</span> -np 20 hello_world</a>
-<a class="sourceLine" id="cb3-3" title="3"><span class="co"># Hello from MPI process 2 out of 20 on savio2.n0070</span></a>
-<a class="sourceLine" id="cb3-4" title="4"><span class="co"># Hello from MPI process 0 out of 20 on savio2.n0096</span></a>
-<a class="sourceLine" id="cb3-5" title="5"><span class="co"># Hello from MPI process 18 out of 20 on savio2.n0070</span></a>
-<a class="sourceLine" id="cb3-6" title="6"><span class="co"># Hello from MPI process 7 out of 20 on savio2.n0098</span></a>
-<a class="sourceLine" id="cb3-7" title="7"><span class="co"># &lt;snip&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" data-line-number="1">$ <span class="ex">mpicc</span> hello_world.c -o hello_world</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">$ <span class="ex">mpirun</span> -np 20 hello_world</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co"># Hello from MPI process 2 out of 20 on savio2.n0070</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co"># Hello from MPI process 0 out of 20 on savio2.n0096</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co"># Hello from MPI process 18 out of 20 on savio2.n0070</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co"># Hello from MPI process 7 out of 20 on savio2.n0098</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co"># &lt;snip&gt;</span></a></code></pre></div>
 <p>Comments:</p>
 <ul>
 <li>multiple (e.g., 20 above) copies of the same executable are run at once (SPMD)</li>
@@ -401,81 +403,81 @@ April 21, 2020
 <p>Examples taken from: <a href="https://research-it.berkeley.edu/services/high-performance-computing/running-your-jobs">Running your Jobs</a></p>
 <h2 id="omp-job">OMP Job</h2>
 <p>Notice that we set <code>--cpus-per-task</code> and then access the environment variable to set the OMP number of threads to use. If you have another way of doing multithreaded tasks, you can use the same <code>$SLURM_CPUS_PER_TASK</code> environment variable.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1"><span class="co">#!/bin/bash</span></a>
-<a class="sourceLine" id="cb4-2" title="2"><span class="co"># Job name:</span></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="co">#SBATCH --job-name=test</span></a>
-<a class="sourceLine" id="cb4-4" title="4"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-5" title="5"><span class="co"># Account:</span></a>
-<a class="sourceLine" id="cb4-6" title="6"><span class="co">#SBATCH --account=account_name</span></a>
-<a class="sourceLine" id="cb4-7" title="7"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-8" title="8"><span class="co"># Partition:</span></a>
-<a class="sourceLine" id="cb4-9" title="9"><span class="co">#SBATCH --partition=partition_name</span></a>
-<a class="sourceLine" id="cb4-10" title="10"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-11" title="11"><span class="co">#QoS:</span></a>
-<a class="sourceLine" id="cb4-12" title="12"><span class="co">#SBATCH --qos=qos_name</span></a>
-<a class="sourceLine" id="cb4-13" title="13"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-14" title="14"><span class="co"># Request one node:</span></a>
-<a class="sourceLine" id="cb4-15" title="15"><span class="co">#SBATCH --nodes=1</span></a>
-<a class="sourceLine" id="cb4-16" title="16"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-17" title="17"><span class="co"># Specify one task:</span></a>
-<a class="sourceLine" id="cb4-18" title="18"><span class="co">#SBATCH --ntasks-per-node=1</span></a>
-<a class="sourceLine" id="cb4-19" title="19"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-20" title="20"><span class="co"># Number of processors for single task needed for use case (example):</span></a>
-<a class="sourceLine" id="cb4-21" title="21"><span class="co">#SBATCH --cpus-per-task=4</span></a>
-<a class="sourceLine" id="cb4-22" title="22"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-23" title="23"><span class="co"># Wall clock limit:</span></a>
-<a class="sourceLine" id="cb4-24" title="24"><span class="co">#SBATCH --time=00:00:30</span></a>
-<a class="sourceLine" id="cb4-25" title="25"><span class="co">#</span></a>
-<a class="sourceLine" id="cb4-26" title="26"><span class="co">## Command(s) to run (example):</span></a>
-<a class="sourceLine" id="cb4-27" title="27"><span class="bu">export</span> <span class="va">OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK</span></a>
-<a class="sourceLine" id="cb4-28" title="28"><span class="ex">./a.out</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="co"># Job name:</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="co">#SBATCH --job-name=test</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="co"># Account:</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="co">#SBATCH --account=account_name</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="co"># Partition:</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="co">#SBATCH --partition=partition_name</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11"><span class="co">#QoS:</span></a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"><span class="co">#SBATCH --qos=qos_name</span></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14"><span class="co"># Request one node:</span></a>
+<a class="sourceLine" id="cb4-15" data-line-number="15"><span class="co">#SBATCH --nodes=1</span></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-17" data-line-number="17"><span class="co"># Specify one task:</span></a>
+<a class="sourceLine" id="cb4-18" data-line-number="18"><span class="co">#SBATCH --ntasks-per-node=1</span></a>
+<a class="sourceLine" id="cb4-19" data-line-number="19"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-20" data-line-number="20"><span class="co"># Number of processors for single task needed for use case (example):</span></a>
+<a class="sourceLine" id="cb4-21" data-line-number="21"><span class="co">#SBATCH --cpus-per-task=4</span></a>
+<a class="sourceLine" id="cb4-22" data-line-number="22"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-23" data-line-number="23"><span class="co"># Wall clock limit:</span></a>
+<a class="sourceLine" id="cb4-24" data-line-number="24"><span class="co">#SBATCH --time=00:00:30</span></a>
+<a class="sourceLine" id="cb4-25" data-line-number="25"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-26" data-line-number="26"><span class="co">## Command(s) to run (example):</span></a>
+<a class="sourceLine" id="cb4-27" data-line-number="27"><span class="bu">export</span> <span class="va">OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK</span></a>
+<a class="sourceLine" id="cb4-28" data-line-number="28"><span class="ex">./a.out</span></a></code></pre></div>
 <h2 id="openmpi-job">OpenMPI job</h2>
 <p>Notice we request 2 nodes and have 20 tasks per node. We could also leave out the number of nodes requested and simply say 40 tasks, and then Slurm would know we need 2 nodes since we said to use 1 CPU per task.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" title="1"><span class="co">#!/bin/bash</span></a>
-<a class="sourceLine" id="cb5-2" title="2"><span class="co"># Job name:</span></a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="co">#SBATCH --job-name=test</span></a>
-<a class="sourceLine" id="cb5-4" title="4"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-5" title="5"><span class="co"># Account:</span></a>
-<a class="sourceLine" id="cb5-6" title="6"><span class="co">#SBATCH --account=account_name</span></a>
-<a class="sourceLine" id="cb5-7" title="7"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-8" title="8"><span class="co"># Partition:</span></a>
-<a class="sourceLine" id="cb5-9" title="9"><span class="co">#SBATCH --partition=partition_name</span></a>
-<a class="sourceLine" id="cb5-10" title="10"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-11" title="11"><span class="co"># QoS:</span></a>
-<a class="sourceLine" id="cb5-12" title="12"><span class="co">#SBATCH --qos=qos_name</span></a>
-<a class="sourceLine" id="cb5-13" title="13"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-14" title="14"><span class="co"># Number of nodes needed for use case:</span></a>
-<a class="sourceLine" id="cb5-15" title="15"><span class="co">#SBATCH --nodes=2</span></a>
-<a class="sourceLine" id="cb5-16" title="16"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-17" title="17"><span class="co"># Tasks per node based on number of cores per node (example):</span></a>
-<a class="sourceLine" id="cb5-18" title="18"><span class="co">#SBATCH --ntasks-per-node=20</span></a>
-<a class="sourceLine" id="cb5-19" title="19"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-20" title="20"><span class="co"># Processors per task:</span></a>
-<a class="sourceLine" id="cb5-21" title="21"><span class="co">#SBATCH --cpus-per-task=1</span></a>
-<a class="sourceLine" id="cb5-22" title="22"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-23" title="23"><span class="co"># Wall clock limit:</span></a>
-<a class="sourceLine" id="cb5-24" title="24"><span class="co">#SBATCH --time=00:00:30</span></a>
-<a class="sourceLine" id="cb5-25" title="25"><span class="co">#</span></a>
-<a class="sourceLine" id="cb5-26" title="26"><span class="co">## Command(s) to run (example):</span></a>
-<a class="sourceLine" id="cb5-27" title="27"><span class="ex">module</span> load gcc openmpi</a>
-<a class="sourceLine" id="cb5-28" title="28"><span class="ex">mpirun</span> ./a.out</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co"># Job name:</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co">#SBATCH --job-name=test</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="co"># Account:</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="co">#SBATCH --account=account_name</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="co"># Partition:</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="co">#SBATCH --partition=partition_name</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"><span class="co"># QoS:</span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12"><span class="co">#SBATCH --qos=qos_name</span></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14"><span class="co"># Number of nodes needed for use case:</span></a>
+<a class="sourceLine" id="cb5-15" data-line-number="15"><span class="co">#SBATCH --nodes=2</span></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"><span class="co"># Tasks per node based on number of cores per node (example):</span></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"><span class="co">#SBATCH --ntasks-per-node=20</span></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-20" data-line-number="20"><span class="co"># Processors per task:</span></a>
+<a class="sourceLine" id="cb5-21" data-line-number="21"><span class="co">#SBATCH --cpus-per-task=1</span></a>
+<a class="sourceLine" id="cb5-22" data-line-number="22"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23"><span class="co"># Wall clock limit:</span></a>
+<a class="sourceLine" id="cb5-24" data-line-number="24"><span class="co">#SBATCH --time=00:00:30</span></a>
+<a class="sourceLine" id="cb5-25" data-line-number="25"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-26" data-line-number="26"><span class="co">## Command(s) to run (example):</span></a>
+<a class="sourceLine" id="cb5-27" data-line-number="27"><span class="ex">module</span> load gcc openmpi</a>
+<a class="sourceLine" id="cb5-28" data-line-number="28"><span class="ex">mpirun</span> ./a.out</a></code></pre></div>
 </div>
 <div id="monitoring-jobs" class="slide section level1">
 <h1>Monitoring Jobs</h1>
 <p>How do I know if my job is using resources efficiently?</p>
 <h3 id="while-job-is-running">While job is running</h3>
 <p>Using <code>srun</code> and <code>htop</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" title="1"><span class="ex">srun</span> -j <span class="va">$JOB_ID</span></a>
-<a class="sourceLine" id="cb6-2" title="2"><span class="fu">uptime</span> <span class="co"># check the load</span></a>
-<a class="sourceLine" id="cb6-3" title="3"></a>
-<a class="sourceLine" id="cb6-4" title="4"><span class="co"># use htop for a visual representation of CPU usage</span></a>
-<a class="sourceLine" id="cb6-5" title="5"><span class="ex">module</span> load htop</a>
-<a class="sourceLine" id="cb6-6" title="6"><span class="ex">htop</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ex">srun</span> -j <span class="va">$JOB_ID</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="fu">uptime</span> <span class="co"># check the load</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="co"># use htop for a visual representation of CPU usage</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="ex">module</span> load htop</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="ex">htop</span></a></code></pre></div>
 <p>Using warewulf:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" title="1"><span class="ex">wwall</span> -j <span class="va">$JOB_ID</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ex">wwall</span> -j <span class="va">$JOB_ID</span></a></code></pre></div>
 <p>Using <a href="http://metacluster.lbl.gov/warewulf">metacluster</a> (imprecise but can give general idea if you know which nodes you’re on):</p>
 <h3 id="after-the-job-has-run">After the job has run</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" title="1"><span class="ex">sacct</span> -j <span class="va">$JOB_ID</span> --format JobID,TotalCPU,CPUTime,NCPUs,Start,End</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ex">sacct</span> -j <span class="va">$JOB_ID</span> --format JobID,TotalCPU,CPUTime,NCPUs,Start,End</a></code></pre></div>
 <p>Not perfectly accurate, since it measures only the parent process of your job (not child processes). Ideally, <code>TotalCPU</code> will be as close as possible to <code>CPUTime</code>.</p>
 </div>
 <div id="parallelization-using-existing-software" class="slide section level1">
@@ -506,7 +508,7 @@ April 21, 2020
 <p>By default, Bowtie 2 uses the Threading Building Blocks library (TBB) for this. [If TBB is not available] Bowtie 2 can be built with make NO_TBB=1 to use pthreads or Windows native multithreading instead.</p>
 </blockquote>
 <p>From the manual, under Performance Options:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1"><span class="ex">-p/--threads</span> NTHREADS</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ex">-p/--threads</span> NTHREADS</a></code></pre></div>
 <blockquote>
 <p>Launch NTHREADS parallel search threads (default: 1). Threads will run on separate processors/cores and synchronize when parsing reads and outputting alignments. Searching for alignments is highly parallel, and speedup is close to linear. Increasing -p increases Bowtie 2’s memory footprint. E.g. when aligning to a human genome index, increasing -p from 1 to 8 increases the memory footprint by a few hundred megabytes. This option is only available if bowtie is linked with the pthreads library (i.e. if BOWTIE_PTHREADS=0 is not specified at build time).</p>
 </blockquote>
@@ -529,7 +531,7 @@ April 21, 2020
 <li>Batching can increase memory use</li>
 </ul>
 <p>Buried in the appendices of the BLAST documentation is this option:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" title="1"><span class="ex">-num_threads</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ex">-num_threads</span></a></code></pre></div>
 <blockquote>
 <p>Number of threads (CPUs) to use in blast search.</p>
 </blockquote>
@@ -552,11 +554,11 @@ April 21, 2020
 <li>scatter-gather (general technique) to describe multi-node processing (paradigm)</li>
 </ul>
 <p>The key options, usable in some tools, are</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" title="1"><span class="ex">-nt</span> / --num_threads</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ex">-nt</span> / --num_threads</a></code></pre></div>
 <blockquote>
 <p>controls the number of data threads sent to the processor</p>
 </blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" title="1"><span class="ex">-nct</span> / --num_cpu_threads_per_data_thread</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ex">-nct</span> / --num_cpu_threads_per_data_thread</a></code></pre></div>
 <blockquote>
 <p>controls the number of CPU threads allocated to each data thread</p>
 </blockquote>
@@ -743,13 +745,13 @@ Memory (Gb)
 <div id="iq-tree" class="slide section level1">
 <h1>IQ-TREE</h1>
 <p>IQ-TREE is a phylogenetics package that makes a maximum-likelihood estimation of the evolutionary history of a set of sequences (i.e. an evolutionary tree).</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb13-1" title="1"><span class="ex">-nt</span></a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ex">-nt</span></a></code></pre></div>
 <blockquote>
 <p>Specify the number of CPU cores for the multicore version. A special option <code>-nt</code> AUTO will tell IQ-TREE to automatically determine the best number of cores given the current data and computer.</p>
 </blockquote>
 <p>Some testing will probably be necessary to learn how memory usage and runtime scale with more threads, but the AUTO parameter is a nice convenience feature implemented by some developers.</p>
 <p>There is also an MPI version which must be compiled seperately, creating a second binary “iqtree-mpi”.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb14-1" title="1"><span class="fu">cmake</span> -DIQTREE_FLAGS=mpi ..</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="fu">cmake</span> -DIQTREE_FLAGS=mpi ..</a></code></pre></div>
 <p>The multicore version is very easy to use on a single node, but large analyses must use the MPI version.</p>
 </div>
 <div id="config-files-environment-variables" class="slide section level1">
@@ -769,138 +771,178 @@ Memory (Gb)
 </div>
 <div id="embarrassingly-parallel-computation" class="slide section level1">
 <h1>Embarrassingly parallel computation</h1>
-<h2 id="lets-blast-to-align-protein-sequences">Let’s blast to align protein sequences</h2>
-<ul>
-<li>[wfeinstein@n0000 BRC]$ cat blast.sh</li>
-<li>blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq</li>
-<li>blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq</li>
-<li>blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq</li>
-</ul>
-<h2 id="parallel-on-one-compute-node">Parallel on one compute node</h2>
-<ul>
-<li>blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq &amp;</li>
-<li>blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq &amp;</li>
-<li>blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq &amp;</li>
-<li>wait</li>
-</ul>
-<h2 id="what-about-more-than-one-nodes">What about more than one nodes</h2>
-<ul>
-<li>ssh -n node1 “blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq” &amp;</li>
-<li>ssh -n node1 “blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq” &amp; …</li>
-<li>ssh -n node2 “blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq” &amp;</li>
-</ul>
-<h2 id="blast-with-gnu-parallel">Blast with GNU parallel</h2>
-<ul>
-<li>parallel -a blas.sh</li>
-</ul>
-<h2 id="what-is-gnu-parallel">What is GNU parallel</h2>
+<h3 id="lets-blast-to-align-protein-sequences">Let’s blast to align protein sequences</h3>
+<pre><code>[user@n0002 BRC]$ cat blast.sh 
+blastp -query protein1.faa -db db/img_v400_PROT.00 -out *protein1.seq
+blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
+blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq</code></pre>
+<h3 id="parallel-on-one-compute-node">Parallel on one compute node</h3>
+<pre><code>blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq &amp;
+blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq &amp;
+blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq &amp;
+wait</code></pre>
+<h3 id="what-about-more-than-one-nodes">What about more than one nodes</h3>
+<pre><code>ssh -n node1 &quot;blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq&quot; &amp;
+ssh -n node1 &quot;blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq&quot; &amp;
+...
+ssh -n node2 &quot;blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq&quot; &amp;</code></pre>
+<h3 id="blast-with-gnu-parallel">Blast with GNU parallel</h3>
+<p><code>parallel -a blast.sh</code></p>
+</div>
+<div id="what-is-gnu-parallel" class="slide section level1">
+<h1>What is GNU parallel</h1>
 <ul>
 <li>A shell tool for executing independent jobs in parallel using one or more computers.</li>
 <li>Dynamically distribute the commands across all of the nodes and cores being requested.</li>
-<li>A job can be a single command or a small script See the <a href="https://www.gnu.org/software/parallel/">GNN Parallel User Guide</a> for more details.</li>
+<li>A job can be a single command or a small script</li>
+<li>See the <a href="https://www.gnu.org/software/parallel/">GNN Parallel User Guide</a> for more details.</li>
 </ul>
-<h2 id="gnu-parallel-command-line">GNU parallel command line</h2>
+<h3 id="gnu-parallel-command-line">GNU parallel command line</h3>
 <ul>
 <li>A job can be a single command
 <ul>
 <li>parallel [options] [command [arguments]] &lt; list_of_arguments</li>
 </ul></li>
-<li>A script that has to be run for each of the lines in the input.
+<li>A script that has to be run for each of the lines in the input
 <ul>
-<li>parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a taks.list)…</li>
+<li>parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a taks.list)</li>
 </ul></li>
 </ul>
-<h2 id="a-typical-use-case-one-application-fed-with-different-parameters">A typical use case: one application fed with different parameters</h2>
+</div>
+<div id="a-typical-use-case-single-application-fed-with-different-parameter-sets" class="slide section level1">
+<h1>A typical use case: single application fed with different parameter sets</h1>
+<h3 id="from-the-command-line">from the command line:</h3>
 <ul>
-<li>from the command line:
-<ul>
-<li>parallel [OPTIONS] COMMAND {} ::: TASKLIST</li>
-<li>e.g. parallel echo {} ::: a b c
-<ul>
-<li>[user@n0002 BRC]$ parallel echo {}{} ::: a b c<br />
+<li>parallel [OPTIONS] COMMAND {} ::: TASKLIST<br />
 </li>
-<li>[user@n0002 BRC]$ parallel echo {}{} ::: a b c ::: e f g</li>
-</ul></li>
-</ul></li>
-<li>from input file
-<ul>
-<li>parallel [OPTIONS] COMMAND {} :::: TASKLIST.LST</li>
-<li>parallel –a TASKLIST.LST [OPTIONS] COMMAND {} e.g. [user@n0002 BRC]$ parallel -a blast.sh echo {}</li>
-</ul></li>
+<li><strong>{}</strong>: parameter holder which is automatically replaced with one line from the tasklist.</li>
 </ul>
-<p>{}: parameter holder which is automatically replaced with one line from the tasklist.</p>
-<h2 id="on-one-compute-node">On one compute node</h2>
-<p>An example of how GNU Parallel handles task parameters as well as some command options</p>
+<pre><code>[user@n0002 BRC]$ parallel echo {} ::: a b c
+   a
+   b
+   c   
+   
+   [user@n0002 BRC]$ parallel --link echo {1}{2} ::: a b c ::: 1 2 3
+   a 1
+   b 2   
+   c 3
+   
+   [user@n0002 BRC]$ parallel echo {} ::: `seq 3`
+   1
+   2
+   3</code></pre>
+<h3 id="from-an-input-file">from an input file</h3>
+<pre><code>- parallel [OPTIONS] COMMAND {} :::: TASKLIST.LST
+- parallel –a TASKLIST.LST [OPTIONS] COMMAND {} </code></pre>
+<pre><code>[user@n0002 BRC]$ parallel echo {} :::: blast.sh 
+
+[user@n0002 BRC]$ parallel -a blast.sh echo {}
+blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq 
+blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
+blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq</code></pre>
+</div>
+<div id="examples" class="slide section level1">
+<h1>Examples</h1>
+<p><strong>Task parameters and command options</strong></p>
+<pre><code>[user@n0002 BRC]$ cat hostname.sh
+         #!/bin/bash
+         echo &quot;using input: $1 $2&quot;
+         echo `hostname` &quot;copy input to output &quot; &gt;$2 ; cat $1 &gt;&gt; $2 
+         
+[user@n0002 BRC]$ cat input.lst
+         input/test0.input
+         input/test1.input
+         ...
+         
+[user@n0002 BRC]$ parallel -j 4 -a input.lst ./hostname.sh {} output/{./}.out</code></pre>
 <ul>
-<li><p>[user@n0002 BRC]$ parallel –jobs 4 -a input.lst sh hostname.sh {} output/{./}.out</p></li>
-<li>[user@n0002 BRC]$ cat hostname.sh - #!/bin/bash - echo “using input: $1 $2” - echo <code>hostname</code> “copy input to output” &gt;$2 ; cat $1 &gt;&gt; $2</li>
-<li>[user@n0002 BRC]$ cat input.lst - input/test0.input - input/test1.input - …</li>
 <li>Whereas
 <ul>
-<li>–job: job# per node, 0: launch as much as core# permits.</li>
+<li>-j: job# per node, 0: launch as much as core# permits.</li>
 <li>-a: task input list</li>
 <li>{}: 1st parameter to hostname.sh, taking one line from input.lst per task</li>
 <li>{./} remove input file extension and path</li>
 <li>output/{./}.out: 2nd parameter to hostname.sh</li>
 </ul></li>
-<li>More command flags:</li>
-<li><p>[user@n0002 BRC]$ paralle –slf hostfile –wd $WORKDIR –joblog runtask.log –resume –progres –jobs 4 -a input.lst sh hostname.sh {} output/{./}.out</p>
-<pre><code>  - --slf: node list
-  - --wd: workdir, default is $HOME
-  - --joblog: logging tasks having finished
-  - --resume: allow starting from the unfinished tasks  
-  - --progress: progress</code></pre></li>
 </ul>
-<h2 id="example-of-a-command-list">Example of a command list</h2>
+<p><strong>More command options</strong></p>
+<pre><code>[user@n0002 BRC]$  paralle --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out</code></pre>
+<pre><code>- --slf: sshloginfile (node list)
+- --wd: workdir, default is $HOME
+- --joblog: log of completed tasks
+- --resume: resume from previous unfinished task 
+- --progress: display task progress as standard output</code></pre>
+</div>
+<div id="logfile" class="slide section level1">
+<h1>logfile</h1>
+<pre><code>[wfeinstein@n0002 BRC]$ head -3 runtask.log
+Seq Host    Starttime   JobRuntime  Send    Receive Exitval Signal  Command
+10  :   1586815193.782       0.043  0   48  0   0   sh hostname.sh input/test9.input output/test9.out
+2   :   1586815193.757       0.094  0   48  0   0   sh hostname.sh input/test1.input output/test1.out</code></pre>
+<p>Logfile pairs with the resume option. Note the logfile has to be removed should you rerun the parameter set at debugging state # Example: input from a command list</p>
+<pre><code>[user@n0002 BRC]$ cat commands.lst 
+    echo &quot;host = &quot; &#39;`hostname`&#39;
+    sh -c &quot;echo today date = ; date&quot; 
+    echo &quot;ls = &quot; `ls`
+    ...
+    
+[user@n0002 BRC] parallel -j 0 &lt; commands.lst
+host =  ln002.brc
+today date = Tue Apr 14 22:51:17 PDT 2020
+...</code></pre>
+</div>
+<div id="example-mpi-applications-using-gnu-parallel" class="slide section level1">
+<h1>Example: MPI applications using GNU Parallel</h1>
 <ul>
-<li>[user@n0002 BRC]$ cat commands.lst - echo “host =” ‘<code>hostname</code>’ - sh -c “echo today date = ; date” - echo “ls =” <code>ls</code> - …</li>
-<li>[user@n0002 BRC] parallel -j 0 &lt; commands.lst</li>
+<li>Traditional MPI job</li>
 </ul>
-<h2 id="gnu-parallel-with-mpi-tasks">GNU Parallel with MPI tasks</h2>
+<pre><code>[user@n0002 BRC]$ mpirun -np 2 ./hello_rank 1 
+Hello1 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 1 out of 2 processors
+
+[user@n0002 BRC]$ time for index in `seq 40`; do  mpirun -np 2 ./a.out $index; done
+Hello1 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 1 out of 2 processors
+Hello2 from processor n0030.es1, rank 0 out of 2 processors
+Hello2 from processor n0030.es1, rank 1 out of 2 processors
+...
+real    0m11.473s
+user    0m3.486s
+sys 0m7.072s</code></pre>
 <ul>
-<li>Traditional MPI job
-<ul>
-<li>[user@n0002 BRC]$ mpirun -np 2 ./hello_rank Wei</li>
-</ul></li>
-<li>launch independent MPI tasks in parallel
-<ul>
-<li><p>[user@n0002 BRC]$ cat name.lst - Simba - Denali - John - …</p></li>
-<li><p>[user@n0002 BRC]$ parallel –slf hostfile –wd $WORKDIR -j -a name.lst 4 mpirun -np 2 ./hello_rank {}</p></li>
-</ul></li>
+<li>launch independent MPI tasks in parallel</li>
 </ul>
-<h2 id="sample-job-submission">Sample job submission</h2>
-<p>We request 2 nodes and have 20 tasks per node. We could also leave out the number of nodes requested and simply say 40 tasks, and then Slurm would know we need 2 nodes since we said to use 1 CPU per task.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb16-1" title="1"><span class="co">#!/bin/bash</span></a>
-<a class="sourceLine" id="cb16-2" title="2"><span class="co"># Job name:</span></a>
-<a class="sourceLine" id="cb16-3" title="3"><span class="co">#SBATCH --job-name=gnu-parallel</span></a>
-<a class="sourceLine" id="cb16-4" title="4"><span class="co">#</span></a>
-<a class="sourceLine" id="cb16-5" title="5"><span class="co"># Account:</span></a>
-<a class="sourceLine" id="cb16-6" title="6"><span class="co">#SBATCH --account=account_name</span></a>
-<a class="sourceLine" id="cb16-7" title="7"><span class="co">#</span></a>
-<a class="sourceLine" id="cb16-8" title="8"><span class="co"># Partition:</span></a>
-<a class="sourceLine" id="cb16-9" title="9"><span class="co">#SBATCH --partition=partition_name</span></a>
-<a class="sourceLine" id="cb16-10" title="10"><span class="co">#</span></a>
-<a class="sourceLine" id="cb16-11" title="11"><span class="co"># QoS:</span></a>
-<a class="sourceLine" id="cb16-12" title="12"><span class="co">#SBATCH --qos=qos_name</span></a>
-<a class="sourceLine" id="cb16-13" title="13"><span class="co">#</span></a>
-<a class="sourceLine" id="cb16-14" title="14"><span class="co"># Number of nodes needed for use case:</span></a>
-<a class="sourceLine" id="cb16-15" title="15"><span class="co">#SBATCH --nodes=2</span></a>
-<a class="sourceLine" id="cb16-16" title="16"><span class="co">#</span></a>
-<a class="sourceLine" id="cb16-17" title="17"><span class="co"># Wall clock limit:</span></a>
-<a class="sourceLine" id="cb16-18" title="18"><span class="co">#SBATCH --time=2:00:00</span></a>
-<a class="sourceLine" id="cb16-19" title="19"><span class="co">#</span></a>
-<a class="sourceLine" id="cb16-20" title="20"><span class="co">## Command(s) to run (example):</span></a>
-<a class="sourceLine" id="cb16-21" title="21"></a>
-<a class="sourceLine" id="cb16-22" title="22"><span class="ex">module</span> load gnu-parallel/2019.03.22</a>
-<a class="sourceLine" id="cb16-23" title="23"><span class="bu">export</span> <span class="va">WORKDIR=</span><span class="st">&quot;/your/path&quot;</span></a>
-<a class="sourceLine" id="cb16-24" title="24"><span class="bu">export</span> <span class="va">JOBS_PER_NODE=</span>8</a>
-<a class="sourceLine" id="cb16-25" title="25"><span class="bu">echo</span> <span class="va">$SLURM_JOB_NODELIST</span> <span class="kw">|</span><span class="fu">sed</span> s/\,/<span class="dt">\\</span>n/g <span class="op">&gt;</span>hostfile</a>
-<a class="sourceLine" id="cb16-26" title="26"><span class="bu">cd</span> <span class="va">$WORKDIR</span></a>
-<a class="sourceLine" id="cb16-27" title="27"></a>
-<a class="sourceLine" id="cb16-28" title="28"><span class="va">PARALLEL=</span><span class="st">&quot;parallel --progress -j </span><span class="va">$JOBS_PER_NODE</span><span class="st"> --slf hostfile --wd </span><span class="va">$WORKDIR</span><span class="st"> --joblog runtask.log --resume&quot;</span></a>
-<a class="sourceLine" id="cb16-29" title="29"><span class="va">$PARALLEL</span> <span class="ex">-a</span> input.lst sh hostname.sh {} <span class="ex">output</span>/<span class="dt">{/.}</span><span class="ex">.out</span>    </a></code></pre></div>
-<h2 id="more-flags">More flags</h2>
-<p>parallel –help</p>
+<pre><code>[user@n0002 BRC]$ time parallel -j 10 mpirun -np 2 ./hello_rank ::: `seq 40`
+Hello2 from processor n0030.es1, rank 1 out of 2 processors
+Hello2 from processor n0030.es1, rank 0 out of 2 processors
+Hello5 from processor n0030.es1, rank 1 out of 2 processors
+Hello5 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 0 out of 2 processors
+Hello1 from processor n0030.es1, rank 1 out of 2 processors
+...
+real    0m3.565s
+user    0m3.208s
+sys 0m9.577s</code></pre>
+</div>
+<div id="job-submission-sample" class="slide section level1">
+<h1>Job submission sample</h1>
+<p>We request 2 nodes as the showcase. Number of nodes to request depends on the the tasklist size.</p>
+<pre><code>#!/bin/bash
+#SBATCH --job-name=gnu-parallel
+#SBATCH --account=account_name
+#SBATCH --partition=partition_name
+#SBATCH --nodes=2
+#SBATCH --time=2:00:00
+## Command(s) to run (example):
+
+module load gnu-parallel/2019.03.22
+export WORKDIR=&quot;/your/path&quot;
+export JOBS_PER_NODE=8
+echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g &gt; hostfile
+cd $WORKDIR
+
+PARALLEL=&quot;parallel --progress -j $JOBS_PER_NODE --slf hostfile --wd $WORKDIR --joblog runtask.log --resume&quot;
+$PARALLEL -a input.lst sh hostname.sh {} output/{/.}.out    </code></pre>
 </div>
 <div id="parallelization-in-python-r-and-matlab" class="slide section level1">
 <h1>Parallelization in Python, R, and MATLAB</h1>
@@ -1172,7 +1214,7 @@ end</code></pre>
 <li>(virtual) office hours: Wed. 1:30-3:00 and Thur. 9:30-11:00</li>
 </ul></li>
 </ul>
-<p>Zoom links for virtual office hours: <a href="https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting">https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting</a></p>
+<p>Zoom links for virtual office hours: <a href="https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting" class="uri">https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting</a></p>
 </div>
 <div id="upcoming-events-and-hiring" class="slide section level1">
 <h1>Upcoming events and hiring</h1>

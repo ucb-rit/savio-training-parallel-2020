@@ -14,7 +14,7 @@ The materials for this tutorial are available using git at the short URL ([https
 
 # Outline
 
- - Introduction
+ - Introduction (Chris)
    - Hardware
    - Parallel processing terms and concepts
    - Approaches to parallelization
@@ -22,17 +22,17 @@ The materials for this tutorial are available using git at the short URL ([https
 	 - Threaded computations
 	 - Multi-process computations
    - Considerations in parallelizing your work
- - Submitting and monitoring parallel jobs on Savio
+ - Submitting and monitoring parallel jobs on Savio (Nicolas)
    - Job submission flags
    - MPI- and openMP- based submission examples
    - Monitoring jobs to check parallelization
- - Parallelization using existing software
+ - Parallelization using existing software (Christopher)
    - How to look at documentation to understand parallel capabilities
    - Specific examples
- - Embarrassingly parallel computation
+ - Embarrassingly parallel computation (Wei)
    - GNU parallel
    - Job submission details
- - Parallelization in Python, R, and MATLAB (time permitting)
+ - Parallelization in Python, R, and MATLAB (Chris; time permitting)
    - Dask and ipyparallel in Python
    - future and other packages in R
    - parfor in MATLAB
@@ -61,7 +61,7 @@ So a cartoon representation of a cluster like Savio is like [this](https://water
 - Hardware terms
   - **cores**: We'll use this term to mean the different processing
     units available on a single node. All the cores share main memory.
-    - **cpus** and **processors**: These generally have multiple cores,
+    - **CPUs** and **processors**: These generally have multiple cores,
       but informally we'll treat 'core', 'cpu', and 'processor' as
       being equivalent.
     - **hardware threads** / **hyperthreading**: on some processors, each
@@ -76,12 +76,14 @@ So a cartoon representation of a cluster like Savio is like [this](https://water
     process; the OS sees the threads as a single process, but one can
     think of them as 'lightweight' processes.
     - seen as >100% CPU usage in `top` and `ps`
-  - **tasks**: individual computations needing to be done
-    - easily confused with **MPI tasks**: the individual processes run as part of an MPI
-    computation
   - **workers**: the individual processes that are carrying out a
     (parallelized) computation (e.g., Python, R, or MATLAB workers
     controlled from the master Python/R/MATLAB process).
+  - **(computational) tasks**: individual computations needing to be done
+    - easily confused with **MPI tasks**: the individual processes run
+    as part of an MPI computation.
+	- easily confused with **SLURM tasks**: the number of individual
+    processes you plan to run. 
 
 
 # Introduction: High-level considerations
@@ -145,7 +147,7 @@ parameter sets.
 
 Tools:
 
-   - GNU parallel (standard Linux tool)*
+   - [GNU parallel](https://www.gnu.org/software/parallel/parallel_tutorial.html#GNU-Parallel-Tutorial) (standard Linux tool)*
    -
    [ht_helper (Savio-specific tool)](https://research-it.berkeley.edu/services/high-performance-computing/user-guide/hthelper-script)
    - SLURM job arrays (careful, one job per node...)
@@ -156,7 +158,7 @@ Tools:
 
 - Single process controls execution
 - Use of code libraries that allow the process to split a computation
-(see [example](openmp_example.c)
+(see [this OpenMP example](openmp_example.c)
 across multiple software threads (still one process)
 ```
   PID  USER  PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                  
@@ -167,7 +169,7 @@ across multiple software threads (still one process)
 
 <center><img src="threads.gif"></center>
 
-(image provided by [https://computing.llnl.gov/tutorials/openMP](https://computing.llnl.gov/tutorials/openMP).)
+(Image provided by [https://computing.llnl.gov/tutorials/openMP](https://computing.llnl.gov/tutorials/openMP).)
 
 # Types of parallelization: Threaded computations (part 2)
 
@@ -202,12 +204,12 @@ multiple workers and farm out independent computations.
 ```
 - Often have more computational tasks than workers
 - Examples:
-  - Python Dask, ipyparallel, ray
-  - R future, foreach, parallel::parLapply
+  - Python: Dask, ipyparallel, ray
+  - R: future, foreach, parallel::parLapply
   - MATLAB: parfor
 - Easy to run on one node with limited (1-2 lines of code) setup
 - Many of these can run across multiple nodes but require **user** to
-  set things up.
+  set things up (see examples in last section of this material).
 
 # Types of parallelization:  Distributed computations
 
@@ -216,8 +218,8 @@ by (carefully) splitting the computation amongst communicating MPI
 workers (MPI 'tasks' or 'ranks').
 
 ```bash
-$ mpicc hello_world.c -o hello_world
-$ mpirun -np 20 hello_world
+$ mpicc mpi_example.c -o mpi_example
+$ mpirun -np 20 mpi_example
 # Hello from MPI process 2 out of 20 on savio2.n0070
 # Hello from MPI process 0 out of 20 on savio2.n0096
 # Hello from MPI process 18 out of 20 on savio2.n0070
@@ -251,18 +253,19 @@ Comments:
 
 # Parallel processing considerations
 
-- Use all the cores on a node fully
-  - Have as many worker processes as all the cores available
-  - Have at least as many tasks as processes (often many more)
-- Only use multiple nodes if you need more cores or more (total)
-memory
+- Use all the cores on a node fully.
+  - Have as many worker processes as all the cores available.
+  - Have at least as many computational tasks as processes (often many more).
+- Use multiple nodes if you need more cores or more (total)
+memory.
 - Starting up worker processes and sending data involves a
-delay (latency)
-  - Don't have very many tasks that each run very quickly
+delay (latency).
+  - Don't have very many tasks that each run very quickly.
+  - Don't send many small chunks of data.
 - Having tasks with highly variable completion times can lead to poor
-  load-balancing (particularly with relatively few tasks)
+  load-balancing (particularly with relatively few tasks).
 - Writing code for computations with dependencies is much harder than
-  embarrassingly parallel computation
+  embarrassingly parallel computation.
 
 
 # Submitting and Monitoring Jobs
@@ -272,10 +275,10 @@ delay (latency)
   - savio (Intel Xeon E5-2670 v2): 164 nodes, 20 CPU cores each (Supports AVX2 instructions)
   - savio2 (Intel Xeon E5-2670 v3): 136 nodes, 24 CPU cores each (Supports AVX2 instructions)
   - and others...
-- See the [Savio User Guide](https://research-it.berkeley.edu/services/high-performance-computing/user-guide/savio-user-guide) for more details.
+- See the [Savio User Guide](https://research-it.berkeley.edu/services/high-performance-computing/user-guide/savio-user-guide#Hardware) for more details.
 
 # Submitting jobs: Slurm Scheduler
-Slurm is a job scheduler which allows you to request resources and queue your job to run when available.
+Slurm is a job scheduler that allows you to request resources and queue your job to run when available.
 
 ## Slurm Environment Variables (for parellelism)
 Slurm provides various environment variables that your program can read that may be useful for managing how to distribute tasks. These are taken from the full list of Slurm environment variables listed on the [Slurm sbatch documentation](https://slurm.schedmd.com/sbatch.html).
@@ -289,7 +292,7 @@ Slurm provides various environment variables that your program can read that may
 
 Examples taken from: [Running your Jobs](https://research-it.berkeley.edu/services/high-performance-computing/running-your-jobs)
 
-## OMP Job
+## OpenMP Job
 Notice that we set `--cpus-per-task` and then access the environment variable to set the OMP number of threads to use. If you have another way of doing multithreaded tasks, you can use the same `$SLURM_CPUS_PER_TASK` environment variable.
 ```bash
 #!/bin/bash
@@ -301,9 +304,6 @@ Notice that we set `--cpus-per-task` and then access the environment variable to
 #
 # Partition:
 #SBATCH --partition=partition_name
-#
-#QoS:
-#SBATCH --qos=qos_name
 #
 # Request one node:
 #SBATCH --nodes=1
@@ -334,9 +334,6 @@ Notice we request 2 nodes and have 20 tasks per node. We could also leave out th
 #
 # Partition:
 #SBATCH --partition=partition_name
-#
-# QoS:
-#SBATCH --qos=qos_name
 #
 # Number of nodes needed for use case:
 #SBATCH --nodes=2
@@ -605,13 +602,13 @@ ssh -n node2 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.s
 - A shell tool for executing independent jobs in parallel using one or more computers. 
 - Dynamically distribute the commands across all of the nodes and cores being requested. 
 - A job can be a single command or a small script 
-- See the [GNN Parallel User Guide](https://www.gnu.org/software/parallel/) for more details.
+- See the [GNU Parallel User Guide](https://www.gnu.org/software/parallel/) for more details.
   
 ### GNU parallel command line
 - A job can be a single command 
     - parallel [options] [command [arguments]] < list_of_arguments
 - A script that has to be run for each of the lines in the input
-    - parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a taks.list)
+    - parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a task.list)
 
 # A typical use case: single application fed with different parameter sets
 ### from the command line:
@@ -670,7 +667,7 @@ blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
 **More command options**
 
 ```
-[user@n0002 BRC]$  paralle --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out
+[user@n0002 BRC]$  parallel --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out
 ```
 
 	- --slf: sshloginfile (node list)
@@ -812,6 +809,7 @@ module load python/3.6
 export SCHED=$(hostname)
 dask-scheduler&
 sleep 30
+# Start one worker per SLURM 'task' (i.e., core)
 srun dask-worker tcp://${SCHED}:8786 &   # might need ${SCHED}.berkeley.edu
 sleep 60
 ```
@@ -824,7 +822,7 @@ import os, dask
 from dask.distributed import Client
 c = Client(address = os.getenv('SCHED') + ':8786')
 n = 100000000
-p = 24
+p = 96
 
  # example use of futures
 futures = [dask.delayed(calc_mean)(i, n) for i in range(p)]
@@ -888,7 +886,8 @@ workers <- system('srun hostname', intern = TRUE)
 cl <- parallel::makeCluster(workers)
 plan(cluster, workers = cl)
 
- # example use of parallel sapply to verify we're actually connected to the workers
+ # example use of parallel sapply 
+ # This example simply verifies we're actually connected to the workers.
 future_sapply(seq_along(workers), function(i) system('hostname', intern = TRUE))
 
  # example use of foreach

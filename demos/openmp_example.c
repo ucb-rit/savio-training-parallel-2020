@@ -15,7 +15,7 @@ int main()
   int nThreads, myID;
   double* input;
   /* make the values of nThreads and myid private to each thread */
-#pragma omp parallel private (nThreads, myID)
+  #pragma omp parallel private (nThreads, myID)
   { // beginning of block
     myID = omp_get_thread_num();
     printf("Hello I am thread %i\n", myID);
@@ -27,5 +27,18 @@ int main()
 	printf("I'm the boss and control %i threads. How come they're in front of me?\n", nThreads);
       }
   } // end of block
+
+  int nReps = 20;
+  double x[nReps];
+  /* parallel loop via threading */
+  #pragma omp parallel for
+  for (int i=0; i<nReps; i++){
+    x[i] = 0.0;
+    for (int j=0; j<1000000; j++){
+      x[i] = x[i] + 1.0;
+    }
+    cout << i << ":" << x[i] << endl;
+  }
+
   return 0;
 } 
