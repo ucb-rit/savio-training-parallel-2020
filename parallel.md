@@ -384,7 +384,195 @@ sacct -j $JOB_ID --format JobID,TotalCPU,CPUTime,NCPUs,Start,End
 ```
 Not perfectly accurate, since it measures only the parent process of your job (not child processes). Ideally, `TotalCPU` will be as close as possible to `CPUTime`.
 
-# Parallelization using existing software (Christopher)
+# Parallelization using existing software
+
+Many times you simply want to use an existing tool to perform an analysis. Parallelization depends on how the developer designed the software, and ease of use usually depends on how well documented the software is.
+
+There are three main ways in which parallelization parameters are set:
+
+- command line arguments
+- compilation options that produce separate executables
+- configuration files
+
+# Command line arguments
+
+Usually command line tools have arguments to set the level of parallelization. e.g.
+
+- `-t`  "threads"
+- `-p`  "processes"
+- `-n`  "number of processes/threads"
+- `-c`  "cores"
+
+# Bowtie2
+
+Bowtie2 is a popular read aligner used in bioinformatics. Next generation sequencing tools often produce millions or billions of short sequences, or "reads". Figuring out which part of the genome these reads came from is a common task called "alignment". This task is highly parallelizable because (once an index is made) aligning each read can be done independently.
+
+From the Manual, under Building from source:
+
+> By default, Bowtie 2 uses the Threading Building Blocks library (TBB) for this. [If TBB is not available] Bowtie 2 can be built with make NO_TBB=1 to use pthreads or Windows native multithreading instead.
+
+From the manual, under Performance Options:
+
+```bash
+-p/--threads NTHREADS
+```
+
+> Launch NTHREADS parallel search threads (default: 1). Threads will run on separate processors/cores and synchronize when parsing reads and outputting alignments. Searching for alignments is highly parallel, and speedup is close to linear. Increasing -p increases Bowtie 2’s memory footprint. E.g. when aligning to a human genome index, increasing -p from 1 to 8 increases the memory footprint by a few hundred megabytes. This option is only available if bowtie is linked with the pthreads library (i.e. if BOWTIE_PTHREADS=0 is not specified at build time).
+
+# Bowtie2 uses multithreading:
+
+- Can use all the cores on a node easily
+- Can not be run across multiple nodes
+- Further parallelization will require splitting up the inputs & merging results after
+
+# BLAST
+
+The Basic Local Alignment Search Tool (BLAST) is another very common alignment tool designed not to find which location in a genome a short sequence comes from but to identify the origin of a larger sequence from a database of all known sequences.
+
+BLASTing many queries
+
+- BLAST takes input files with multiple queries
+- Some speedup is achieved by batch searching - multiple queries are scanned against the DB at once
+- Batching can increase memory use
+
+Buried in the appendices of the BLAST documentation is this option:
+
+```bash
+-num_threads
+```
+
+> Number of threads (CPUs) to use in blast search.
+
+The implementation here is not well documented, but it's safe to assume this means threading with shared memory, and thus won't work across nodes. Still, a few quick tests shows that [the `-num_threads` option results in a non-linear speedup that quickly levels off around -num_threads 4.](https://voorloopnul.com/blog/how-to-correctly-speed-up-blast-using-num_threads/)
+
+# BLAST is an excellent candidate for GNU parallel or ht_helper.
+
+- covered in the next section
+- splitting your queries and running multiple instances of BLAST is faster than the -num_threads option
+
+# GATK
+
+The Genome Analysis Tool Kit is a tool for making statistical inferences about genotypes or gene frequencies from sets of alignments like those produced by Bowtie2. GATK manual is very large (many different tools), and parralelization documentation doesn't jump out. Fortunately, GATK has a [large helpful community producing guides.](https://gatkforums.broadinstitute.org/gatk/discussion/1975/how-can-i-use-parallelism-to-make-gatk-tools-run-faster)
+
+GATK uses different terminology
+
+ - Machines vs Nodes
+ - "data threads" and "cpu threads"
+ - scatter-gather (general technique) to describe multi-node processing (paradigm)
+
+The key options, usable in some tools, are
+
+```bash
+-nt / --num_threads
+```
+
+> controls the number of data threads sent to the processor
+
+```bash
+-nct / --num_cpu_threads_per_data_thread
+```
+
+> controls the number of CPU threads allocated to each data thread
+
+Reading the guides, `-nt` duplicates the data in memory because `-nt` "threads" cannot share memory, while `-nct` threads use shared memory. This paradigm is sometimes refered to as processes/threads, rather than data-threads/cpu-threads.
+
+# GATK has multiple levels of parallelization
+
+- Different tools
+- Different resource needs
+- Different recommended configurations
+
+<table class="table table-striped table-bordered table-condensed"><thead><tr><th align="left">Tool</th>
+<th align="center">RTC</th>
+<th align="center">IR</th>
+<th align="center">BR</th>
+<th align="center">PR</th>
+<th align="center">RR</th>
+<th align="center">HC</th>
+<th align="center">UG</th>
+</tr></thead><tbody><tr><td align="left">Available modes</td>
+<td align="center">NT</td>
+<td align="center">SG</td>
+<td align="center">NCT,SG</td>
+<td align="center">NCT</td>
+<td align="center">SG</td>
+<td align="center">NCT,SG</td>
+<td align="center">NT,NCT,SG</td>
+</tr><tr><td align="left">Cluster nodes</td>
+<td align="center">1</td>
+<td align="center">4</td>
+<td align="center">4</td>
+<td align="center">1</td>
+<td align="center">4</td>
+<td align="center">4</td>
+<td align="center">4 / 4 / 4</td>
+</tr><tr><td align="left">CPU threads (<code class="code codeInline" spellcheck="false">-nct</code>)</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">8</td>
+<td align="center">4-8</td>
+<td align="center">1</td>
+<td align="center">4</td>
+<td align="center">3 / 6 / 24</td>
+</tr><tr><td align="left">Data threads (<code class="code codeInline" spellcheck="false">-nt</code>)</td>
+<td align="center">24</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">8 / 4 / 1</td>
+</tr><tr><td align="left">Memory (Gb)</td>
+<td align="center">48</td>
+<td align="center">4</td>
+<td align="center">4</td>
+<td align="center">4</td>
+<td align="center">4</td>
+<td align="center">16</td>
+<td align="center">32 / 16 / 4</td>
+</tr></tbody></table>
+
+# Compilation options/Separate executables
+
+Some software can use either multithreading or MPI.
+
+- MPI implementation requires additional libraries (e.g. OpenMPI)
+- this functionality is toggled on/off at compilation
+
+# IQ-TREE
+
+IQ-TREE is a phylogenetics package that makes a maximum-likelihood estimation of the evolutionary history of a set of sequences (i.e. an evolutionary tree).
+
+```bash
+-nt
+```
+
+> Specify the number of CPU cores for the multicore version. A special option `-nt` AUTO will tell IQ-TREE to automatically determine the best number of cores given the current data and computer.
+
+Some testing will probably be necessary to learn how memory usage and runtime scale with more threads, but the AUTO parameter is a nice convenience feature implemented by some developers.
+
+There is also an MPI version which must be compiled seperately, creating a second binary "iqtree-mpi".
+
+```bash
+cmake -DIQTREE_FLAGS=mpi ..
+```
+
+The multicore version is very easy to use on a single node, but large analyses must use the MPI version.
+
+# Config Files & Environment Variables
+
+Sometimes the parallelization settings are set in configuration files or in environment variables, rather than as arguments to the execution call.
+
+# Abaqus
+
+Abaqus is a popular finite element analysis software. Physicist, engineers, and others use this software to test when their designs will break or light on fire, among other things.
+
+`abaqus_v6.env` is a Python syntax config file that is read when Abaqus runs.
+
+- cpus
+- gpus
+- memory
+- mp_mode
 
 # Embarrassingly parallel computation
 
