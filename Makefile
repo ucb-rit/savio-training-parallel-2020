@@ -7,4 +7,4 @@ parallel_slides.html: parallel.md
 	pandoc -s --webtex -t slidy -o parallel_slides.html parallel.md
 
 clean:
-	rm -rf parallel.html
+	rm -rf parallel.html parallel_slides.html
