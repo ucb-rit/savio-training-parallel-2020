@@ -580,15 +580,15 @@ Abaqus is a popular finite element analysis software. Physicist, engineers, and 
 
 ```
 [user@n0002 BRC]$ cat blast.sh 
-blastp -query *protein1.faa* -db db/img_v400_PROT.00 -out *protein1.seq* 
-blastp -query *protein2.faa* -db db/img_v400_PROT.00 -out *protein2.seq* 
-blastp -query *protein3.faa* -db db/img_v400_PROT.00 -out *protein3.seq*
+blastp -query protein1.faa -db db/img_v400_PROT.00 -out *protein1.seq
+blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
+blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
 ```
 ### Parallel on one compute node 
 ```
-blastp -query *protein1.faa* -db db/img_v400_PROT.00 -out *protein1.seq* &
-blastp -query *protein2.faa* -db db/img_v400_PROT.00 -out *protein2.seq* &
-blastp -query *protein3.faa* -db db/img_v400_PROT.00 -out *protein3.seq* &
+blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq &
+blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq &
+blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq &
 wait
 ```
 ### What about more than one nodes
@@ -707,12 +707,8 @@ today date = Tue Apr 14 22:51:17 PDT 2020
 - Traditional MPI job
 	`[user@n0002 BRC]$ mpirun -np 2 ./hello_rank Wei  `
 - launch independent MPI tasks in parallel 
-```[user@n0002 BRC]$ cat name.lst 
-			- Simba
-			- Denali
-			- John
-			- ...
-[user@n0002 BRC]$ parallel --slf hostfile --wd $WORKDIR -j -a name.lst 4 mpirun -np 2 ./hello_rank {}
+```
+[user@n0002 BRC]$ parallel --slf hostfile --wd $WORKDIR -j 10 mpirun -np 2 ./hello_rank
 ```
 # Job submission sample
 We request 2 nodes as the showcase. Number of nodes to request depends on the the tasklist size. 
