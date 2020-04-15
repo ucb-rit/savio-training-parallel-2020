@@ -42,14 +42,14 @@ The materials for this tutorial are available using git at the short URL ([https
 Savio is a cluster of hundreds of computers (aka 'nodes'), each with many CPUs
 (cores), networked together. 
 
-<center><img src="savio_diagram.jpeg"></center>
+<center><img src="figures/savio_diagram.jpeg"></center>
 
 # Introduction: multi-core computers
 
 Each computer has its own memory and multiple (12-56) cores per
 machine.
 
-<center><img src="generic_machine.jpeg"></center>
+<center><img src="figures/generic_machine.jpeg"></center>
 
 savio2 nodes: two Intel Xeon 12-core Haswell processors (24 cores per
 node (a few have 28))
@@ -158,7 +158,7 @@ Tools:
 
 - Single process controls execution
 - Use of code libraries that allow the process to split a computation
-(see [this OpenMP example](openmp_example.c)
+(see [this OpenMP example](demos/openmp_example.c)
 across multiple software threads (still one process)
 ```
   PID  USER  PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                  
@@ -167,7 +167,7 @@ across multiple software threads (still one process)
 - Threads share memory and data structures (beware 'race' conditions)
 - Single node ONLY!
 
-<center><img src="threads.gif"></center>
+<center><img src="figures/threads.gif"></center>
 
 (Image provided by [https://computing.llnl.gov/tutorials/openMP](https://computing.llnl.gov/tutorials/openMP).)
 
@@ -684,7 +684,9 @@ Seq	Host	Starttime	JobRuntime	Send	Receive	Exitval	Signal	Command
 10	:	1586815193.782	     0.043	0	48	0	0	sh hostname.sh input/test9.input output/test9.out
 2	:	1586815193.757	     0.094	0	48	0	0	sh hostname.sh input/test1.input output/test1.out
 ```
-Logfile pairs with the resume option. Note the logfile has to be removed should you rerun the parameter set at debugging state
+Logfile pairs with the resume option. Note the logfile has to be
+removed should you rerun the parameter set at debugging state
+
 # Example: input from a command list 
 
 ```
