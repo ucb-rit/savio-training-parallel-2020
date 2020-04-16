@@ -377,7 +377,7 @@ Using [metacluster](http://metacluster.lbl.gov/warewulf) (imprecise but can give
 
 ### After the job has run
 ```bash
-sacct -j $JOB_ID --format JobID,TotalCPU,CPUTime,NCPUs,Start,End
+sacct -j $JOB_ID --format JobID,TotalCPU,CPUTime,NCPUs,MaxRSS,Start,End
 ```
 Not perfectly accurate, since it measures only the parent process of your job (not child processes). Ideally, `TotalCPU` will be as close as possible to `CPUTime`.
 
