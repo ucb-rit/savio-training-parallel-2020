@@ -449,7 +449,7 @@ The implementation here is not well documented, but it's safe to assume this mea
 
 # GATK
 
-The Genome Analysis Tool Kit is a tool for making statistical inferences about genotypes or gene frequencies from sets of alignments like those produced by Bowtie2. GATK manual is very large (many different tools), and parralelization documentation doesn't jump out. Fortunately, GATK has a [large helpful community producing guides.](https://gatkforums.broadinstitute.org/gatk/discussion/1975/how-can-i-use-parallelism-to-make-gatk-tools-run-faster)
+The Genome Analysis Tool Kit is a tool for making statistical inferences about genotypes or gene frequencies from sets of alignments like those produced by Bowtie2. The GATK manual is very large (many different tools), and parralelization documentation doesn't jump out. Fortunately, GATK has a [large helpful community producing guides.](https://gatkforums.broadinstitute.org/gatk/discussion/1975/how-can-i-use-parallelism-to-make-gatk-tools-run-faster)
 
 GATK uses different terminology
 
@@ -479,55 +479,65 @@ Reading the guides, `-nt` duplicates the data in memory because `-nt` "threads" 
 - Different resource needs
 - Different recommended configurations
 
+NCT = Threads (Shared memory)   
+NT = "data threads" (Indpendent memory)   
+SG = "scatter gather" (Multiple nodes)*    
+
 <table class="table table-striped table-bordered table-condensed"><thead><tr><th align="left">Tool</th>
-<th align="center">RTC</th>
-<th align="center">IR</th>
-<th align="center">BR</th>
-<th align="center">PR</th>
-<th align="center">RR</th>
-<th align="center">HC</th>
-<th align="center">UG</th>
-</tr></thead><tbody><tr><td align="left">Available modes</td>
-<td align="center">NT</td>
-<td align="center">SG</td>
-<td align="center">NCT,SG</td>
-<td align="center">NCT</td>
-<td align="center">SG</td>
-<td align="center">NCT,SG</td>
-<td align="center">NT,NCT,SG</td>
-</tr><tr><td align="left">Cluster nodes</td>
-<td align="center">1</td>
-<td align="center">4</td>
-<td align="center">4</td>
-<td align="center">1</td>
-<td align="center">4</td>
-<td align="center">4</td>
-<td align="center">4 / 4 / 4</td>
-</tr><tr><td align="left">CPU threads (<code class="code codeInline" spellcheck="false">-nct</code>)</td>
-<td align="center">1</td>
-<td align="center">1</td>
-<td align="center">8</td>
-<td align="center">4-8</td>
-<td align="center">1</td>
-<td align="center">4</td>
-<td align="center">3 / 6 / 24</td>
-</tr><tr><td align="left">Data threads (<code class="code codeInline" spellcheck="false">-nt</code>)</td>
-<td align="center">24</td>
-<td align="center">1</td>
-<td align="center">1</td>
-<td align="center">1</td>
-<td align="center">1</td>
-<td align="center">1</td>
-<td align="center">8 / 4 / 1</td>
-</tr><tr><td align="left">Memory (Gb)</td>
-<td align="center">48</td>
-<td align="center">4</td>
-<td align="center">4</td>
-<td align="center">4</td>
-<td align="center">4</td>
-<td align="center">16</td>
-<td align="center">32 / 16 / 4</td>
+<th align="left">Full name</th>
+<th align="left">Type of traversal</th>
+<th align="center">NT</th>
+<th align="center">NCT</th>
+<th align="center">SG</th>
+</tr></thead><tbody><tr><td align="left">RTC</td>
+<td align="left">RealignerTargetCreator</td>
+<td align="left">RodWalker</td>
+<td align="center">+</td>
+<td align="center">-</td>
+<td align="center">-</td>
+</tr><tr><td align="left">IR</td>
+<td align="left">IndelRealigner</td>
+<td align="left">ReadWalker</td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center">+</td>
+</tr><tr><td align="left">BR</td>
+<td align="left">BaseRecalibrator</td>
+<td align="left">LocusWalker</td>
+<td align="center">-</td>
+<td align="center">+</td>
+<td align="center">+</td>
+</tr><tr><td align="left">PR</td>
+<td align="left">PrintReads</td>
+<td align="left">ReadWalker</td>
+<td align="center">-</td>
+<td align="center">+</td>
+<td align="center">-</td>
+</tr><tr><td align="left">RR</td>
+<td align="left">ReduceReads</td>
+<td align="left">ReadWalker</td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center">+</td>
+</tr><tr><td align="left">HC</td>
+<td align="left">HaplotypeCaller</td>
+<td align="left">ActiveRegionWalker</td>
+<td align="center">-</td>
+<td align="center">(+)</td>
+<td align="center">+</td>
+</tr><tr><td align="left">UG</td>
+<td align="left">UnifiedGenotyper</td>
+<td align="left">LocusWalker</td>
+<td align="center">+</td>
+<td align="center">+</td>
+<td align="center">+</td>
 </tr></tbody></table>
+
+# Scatter Gather in GATK
+
+- GATK supports use of WDL (Workflow Description Language) to script multi-node capable processing
+- this is a scripting language to generate multiple GATK calls
+- probably easier to use GNU parallel for multi-node parallelism
 
 # Compilation options/Separate executables
 
@@ -551,6 +561,8 @@ Some testing will probably be necessary to learn how memory usage and runtime sc
 There is also an MPI version which must be compiled seperately, creating a second binary "iqtree-mpi".
 
 ```bash
+module load gcc
+module load openmpi
 cmake -DIQTREE_FLAGS=mpi ..
 ```
 
