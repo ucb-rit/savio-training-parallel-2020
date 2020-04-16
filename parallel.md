@@ -124,10 +124,11 @@ Possible solutions:
 
 # Introduction: Types of parallelization
 
-- Vector instructions (AVX2/AVX512)
 - Embarrassingly parallel computation of multiple jobs on one or more nodes*
 - Parallelize one job over CPU cores*
 - Parallelize one job over multiple nodes*
+- Vector instructions (AVX2/AVX512) allow vectorized arithmetic on recent
+  Intel CPUs (e.g., savio2, savio3 nodes)
 
 \* focusing on these strategies today
 
