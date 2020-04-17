@@ -361,7 +361,7 @@ How do I know if my job is using resources efficiently?
 Using `srun` and `htop`:
 
 ```bash
-srun -j $JOB_ID
+srun --jobid=$JOB_ID --pty bash -i
 uptime # check the load
 
 # use htop for a visual representation of CPU usage
@@ -369,7 +369,7 @@ module load htop
 htop
 ```
 
-Using warewulf:
+Using warewulf (might not be working):
 ```bash
 wwall -j $JOB_ID
 ```
