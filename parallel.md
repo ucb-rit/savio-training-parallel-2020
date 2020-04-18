@@ -590,7 +590,7 @@ Abaqus is a popular finite element analysis software. Physicist, engineers, and 
 
 ```
 [user@n0002 BRC]$ cat blast.sh 
-blastp -query protein1.faa -db db/img_v400_PROT.00 -out *protein1.seq
+blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq
 blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
 blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
 ```
@@ -613,20 +613,19 @@ ssh -n node2 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.s
 
 # What is GNU parallel
 - A shell tool for executing independent jobs in parallel using one or more computers. 
-- Dynamically distribute the commands across all of the nodes and cores being requested. 
+- Dynamically distribute the tasks across the targeted cores/nodes. 
 - A job can be a single command or a small script 
-- See the [GNU Parallel User Guide](https://www.gnu.org/software/parallel/) for more details.
-  
-### GNU parallel command line
-- A job can be a single command 
-    - parallel [options] [command [arguments]] < list_of_arguments
-- A script that has to be run for each of the lines in the input
-    - parallel [options] [command [arguments]] (::: arguments|:::: argfile(s)| -a task.list)
+- Applicable applications:
+   - Serial (most common)
+   - Multi-threaded (most common)
+   - MPI (not common)
 
-# A typical use case: single application fed with different parameter sets
-### from the command line:
-   - parallel [OPTIONS] COMMAND {} ::: TASKLIST   
-   - **{}**: parameter holder which is automatically replaced with one line from the tasklist.
+See GNU Parallel [User Guide](https://www.gnu.org/software/parallel/) for more details.
+  
+# Task list from the command line:
+
+- parallel [OPTIONS] COMMAND {} ::: arguments   
+**{}**: parameter holder which is automatically replaced from the tasklist.
 ```
 [user@n0002 BRC]$ parallel echo {} ::: a b c
    a
@@ -643,111 +642,148 @@ ssh -n node2 "blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.s
    2
    3
 ```
-### from an input file
-    - parallel [OPTIONS] COMMAND {} :::: TASKLIST.LST
-    - parallel –a TASKLIST.LST [OPTIONS] COMMAND {} 
-```
-[user@n0002 BRC]$ parallel echo {} :::: blast.sh 
 
-[user@n0002 BRC]$ parallel -a blast.sh echo {}
-blastp -query protein1.faa -db db/img_v400_PROT.00 -out protein1.seq 
-blastp -query protein2.faa -db db/img_v400_PROT.00 -out protein2.seq 
-blastp -query protein3.faa -db db/img_v400_PROT.00 -out protein3.seq
-```
-# Examples
+# Task list in the format of a text file
 
-**Task parameters and command options** 
+ - parallel [OPTIONS] COMMAND {} :::: argfile(s)
+ - parallel –a argfile(s) [OPTIONS] COMMAND {} 
+ 
+`[user@n0002 BRC]$ parallel echo {} :::: task.lst `
+
+Generate input files and a task list
 ```
-[user@n0002 BRC]$ cat hostname.sh
-		 #!/bin/bash
-		 echo "using input: $1 $2"
-		 echo `hostname` "copy input to output " >$2 ; cat $1 >> $2 
-		 
-[user@n0002 BRC]$ cat input.lst
-		 input/test0.input
-   		 input/test1.input
-		 ...
-		 
-[user@n0002 BRC]$ parallel -j 4 -a input.lst ./hostname.sh {} output/{./}.out
+[user@n0002 BRC]$ mkdir -p input; for i in `seq 500`; do touch input/test$i.in ; echo "test $i" > input/test$i.in ; done
+[user@n0002 BRC]$ ls input |tr '\ ' '\n' |awk '{print "input/"$0}' >task.lst
+[user@n0002 BRC]$ cat task.lst
+	input/test0.in
+   	input/test1.in
+	input/test2.in
+	...
+	
+[user@n0002 BRC]$ parallel -a task.lst echo {}
+	input/test0.in
+   	input/test1.in
+	input/test3.in
+	...
+```
+# Example 1: Same application/commands fed with different parameter sets
+**parameters and command options** 
+```
+[user@n0002 BRC]$ echo `hostname` "copy input to output "; cp input/xxx.in output/xxx.out
+```
+Launch 4 parallel tasks 
+```
+[user@n0002 BRC]$ module load gnu-parallel/2019.03.22; mkdir -p output
+[user@n0002 BRC]$ parallel --jobs 4 -a task.lst "echo `hostname` "copy input to output "; cp $1 $2" {} output/{/.}.out
 ```
 - Whereas
-   	- -j: job# per node, 0: launch as much as core# permits.
-	- -a: task input list
-	- {}: 1st parameter to hostname.sh, taking one line from input.lst per task
-	- {./} remove input file extension and path
-	- output/{./}.out: 2nd parameter to hostname.sh		
+   	- --jobs/-j: The number of commands to run concurrently per node
+	- -j 0: launch as many tasks as core# permits.
+	- -a: a text file used as the task list. 
+	- {}: 1st parameter taking one line from task.lst per task
+	- {/.} remove file path and extension  
+	- output/{/.}.out: 2nd parameter with a new path and file extension 	
 
-**More command options**
+Oftentimes, commands need more than one line of code. In that case, a script is used as the core unit.
+
+```	
+[user@n0002 BRC]$ cat hostname.sh
+	#!/bin/bash
+	##  Example: a script used for GNU parallel
+	echo `hostname` "copy input to output "
+	cp $1 $2 
+		 		 
+[user@n0002 BRC]$ parallel -j 4 -a task.lst ./hostname.sh {} output/{/.}.out
+```
+# More GNU Parallel command options
+
+- --sshloginfile/-slf sshloginfile: sshloginfile (node list)
+- --workdir/-wd: landing workdir on compute node, default is $HOME
+- --joblog: log of completed tasks
+- --resume: resume from unfinished tasks based on log info 
+- --progress: display job progress
+- --eta: estimated time to finish
+- --load: threshold for CPU load, e.g. 80%
+- --noswap: new jobs won't be started if a node is under heavy memory load
+- --memfree: check if there is enough free memory, e.g. 2G 
+```
+[user@n0002 BRC]$ cat hostfile
+	n0148.savio3
+	n0149.savio3
+
+[user@n0002 BRC]$ parallel --progress --eta --slf hostfile --wd `pwd` --joblog job.log --resume --jobs 4 -a task.lst sh hostname.sh {} output/{/.}.out
+...
+ETA: 61s Left: 492 AVG: 0.12s  n0148.savio3:4/4/50%/0.5s  n0149.savio3:4/4/50%/0.5s n0148.savio3 copy input to output
+ETA: 60s Left: 491 AVG: 0.11s  n0148.savio3:4/5/52%/0.4s  n0149.savio3:4/4/47%/0.5s n0149.savio3 copy input to output
+ETA: 60s Left: 490 AVG: 0.10s  n0148.savio3:4/5/52%/0.4s  n0149.savio3:3/5/47%/0.4s n0148.savio3 copy input to output
+...
 
 ```
-[user@n0002 BRC]$  parallel --slf hostfile --wd $WORKDIR --joblog runtask.log --resume --progres --jobs 4 -a input.lst sh hostname.sh {} output/{./}.out
+# Log  
 ```
+[user@n0002 BRC]$ head -3 job.log
+Seq     Host    Starttime       JobRuntime      Send    Receive Exitval Signal  Command
+1       n0149.savio3    1587243717.218       1.282      0       82      0       0       sh hostname.sh input/test1.in output/test1.out
+2       n0148.savio3    1587243717.221       1.279      0       84      0       0       sh hostname.sh input/test10.in output/test10.out
 
-	- --slf: sshloginfile (node list)
-	- --wd: workdir, default is $HOME
-	- --joblog: log of completed tasks
-	- --resume: resume from previous unfinished task 
-	- --progress: display task progress as standard output
-
-
-# logfile
 ```
-[wfeinstein@n0002 BRC]$ head -3 runtask.log
-Seq	Host	Starttime	JobRuntime	Send	Receive	Exitval	Signal	Command
-10	:	1586815193.782	     0.043	0	48	0	0	sh hostname.sh input/test9.input output/test9.out
-2	:	1586815193.757	     0.094	0	48	0	0	sh hostname.sh input/test1.input output/test1.out
-```
-Logfile pairs with the resume option. Note the logfile has to be
-removed should you rerun the parameter set at debugging state
+Typically *--log logfile* pairs with the *resume* option for production runs. 
+Note: a uniq name of logfile is recommended, such as $SLURM_JOB_NAME.log
+Otherwise, job rerun will not start when the same logfile exists 
 
-# Example: input from a command list 
+
+# Example 2: input from a command list 
 
 ```
 [user@n0002 BRC]$ cat commands.lst 
 	echo "host = " '`hostname`'
 	sh -c "echo today date = ; date" 
-	echo "ls = " `ls`
+	sh -c "echo today date = ; date" 
 	...
 	
-[user@n0002 BRC] parallel -j 0 < commands.lst
-host =  ln002.brc
-today date = Tue Apr 14 22:51:17 PDT 2020
-...
+[user@n0002 BRC] parallel -j 2 < commands.lst
+	host =  n0148.savio3
+	today date = Sat Apr 18 14:07:33 PDT 2020
+	...
 ```
 
-# Example: MPI applications using GNU Parallel
+# Example 3: MPI applications using GNU Parallel
 - Traditional MPI job
 ```	
+[user@n0002 BRC]$ mpicc hello_rank.c -o hello_rank
 [user@n0002 BRC]$ mpirun -np 2 ./hello_rank 1 
-Hello1 from processor n0030.es1, rank 0 out of 2 processors
-Hello1 from processor n0030.es1, rank 1 out of 2 processors
+Hello1 from processor n0148.savio3, rank 0 out of 2 processors
+Hello1 from processor n0148.savio3, rank 1 out of 2 processors
 
-[user@n0002 BRC]$ time for index in `seq 40`; do  mpirun -np 2 ./a.out $index; done
-Hello1 from processor n0030.es1, rank 0 out of 2 processors
-Hello1 from processor n0030.es1, rank 1 out of 2 processors
-Hello2 from processor n0030.es1, rank 0 out of 2 processors
-Hello2 from processor n0030.es1, rank 1 out of 2 processors
+[user@n0002 BRC]$ time for index in `seq 40`; do  mpirun -np 2 ./hello_rank $index; done
+Hello 1 from processor n0148.savio3, rank 0 out of 2 processors
+Hello 1 from processor n0149.savio3, rank 1 out of 2 processors
+Hello 2 from processor n0148.savio3, rank 0 out of 2 processors
+Hello 2 from processor n0149.savio3, rank 1 out of 2 processors
+Hello 3 from processor n0148.savio3, rank 0 out of 2 processors
+Hello 3 from processor n0149.savio3, rank 1 out of 2 processors
+
 ...
-real	0m11.473s
-user	0m3.486s
-sys	0m7.072s
+real	1m17.843s
+user	0m2.052s
+sys	0m3.429s
 ```
 - launch independent MPI tasks in parallel 
 ```
-[user@n0002 BRC]$ time parallel -j 10 mpirun -np 2 ./hello_rank ::: `seq 40`
-Hello2 from processor n0030.es1, rank 1 out of 2 processors
-Hello2 from processor n0030.es1, rank 0 out of 2 processors
-Hello5 from processor n0030.es1, rank 1 out of 2 processors
-Hello5 from processor n0030.es1, rank 0 out of 2 processors
-Hello1 from processor n0030.es1, rank 0 out of 2 processors
-Hello1 from processor n0030.es1, rank 1 out of 2 processors
+[user@n0002 BRC]$ time parallel -j 16 mpirun -np 2 ./hello_rank ::: `seq 40`
+Hello 13 from processor n0148.savio3, rank 0 out of 2 processors
+Hello 13 from processor n0149.savio3, rank 1 out of 2 processors
+Hello 2 from processor n0148.savio3, rank 0 out of 2 processors
+Hello 2 from processor n0149.savio3, rank 1 out of 2 processors
+Hello 7 from processor n0148.savio3, rank 0 out of 2 processors
+Hello 7 from processor n0149.savio3, rank 1 out of 2 processors
 ...
-real	0m3.565s
-user	0m3.208s
-sys	0m9.577s
+real	0m14.764s
+user	0m2.196s
+sys	0m14.026s
 ```
 # Job submission sample
-We request 2 nodes as the showcase. Number of nodes to request depends on the the tasklist size. 
+We request 2 nodes as the showcase. Number of nodes to request depends on the the size of your task list. 
 
 ```
 #!/bin/bash
@@ -756,17 +792,35 @@ We request 2 nodes as the showcase. Number of nodes to request depends on the th
 #SBATCH --partition=partition_name
 #SBATCH --nodes=2
 #SBATCH --time=2:00:00
+
 ## Command(s) to run (example):
 
 module load gnu-parallel/2019.03.22
-export WORKDIR="/your/path"
-export JOBS_PER_NODE=8
-echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g > hostfile
+export WORKDIR=/global/scratch/$USER/your/path
 cd $WORKDIR
 
-PARALLEL="parallel --progress -j $JOBS_PER_NODE --slf hostfile --wd $WORKDIR --joblog runtask.log --resume"
-$PARALLEL -a input.lst sh hostname.sh {} output/{/.}.out    
+export JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE*$SLURM_JOB_NUM_NODES )) 
+## when each task is multi-threaded, say NTHREADS=2, then JOBS_PER_NODE should be revised as below
+## JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE * $SLURM_JOB_NUM_NODES / NTHREADS ))
+
+echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g > hostfile
+## when GNU parallel can't detect core# of remote nodes, say --progress/--eta, 
+## core# should be prepended to hostnames. e.g. 32/n0149.savio3
+## echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g |awk -v cores=$SLURM_CPUS_ON_NODE '{print cores"/"$1}'> hostfile
+
+PARALLEL="parallel --progress -j $JOBS_PER_NODE --slf hostfile --wd $WORKDIR --joblog $SLURM_JOB_NAME.log --resume"
+$PARALLEL -a task.lst sh hostname.sh {} output/{/.}.out    
 ```
+# Summary and Additional Resources
+
+**Summary** 
+   - GNU Parallel is an effective and simple tool to parallel independent jobs
+   - Rich set of options, more to explore 
+   - Request interactive node(s) to config optimal GNU parallel options for your applications before submitting jobs
+
+- GNU Parallel [man page](https://www.gnu.org/software/parallel/man.html)
+- GPU Parallel [tutorial](https://www.gnu.org/software/parallel/parallel_tutorial.html)
+
 # Parallelization in Python, R, and MATLAB
 
 - Support for threaded computations:
