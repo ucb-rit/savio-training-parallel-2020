@@ -10,7 +10,11 @@ Much of this material is based on the extensive Savio documention we
 have prepared and continue to prepare, available at our new
 documentation site: [https://docs-research-it.berkeley.edu/services/high-performance-computing](https://docs-research-it.berkeley.edu/services/high-performance-computing) as well as our old site: [http://research-it.berkeley.edu/services/high-performance-computing](http://research-it.berkeley.edu/services/high-performance-computing).
 
-The materials for this tutorial are available using git at the short URL ([https://tinyurl.com/brc-apr20](https://tinyurl.com/brc-apr20)), the  GitHub URL ([https://github.com/ucb-rit/savio-training-parallel-2020](https://github.com/ucb-rit/savio-training-parallel-2020)), or simply as a [zip file](https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip).
+The materials for this tutorial are available using git at the short
+URL ([https://tinyurl.com/brc-apr20](https://tinyurl.com/brc-apr20)),
+the  GitHub URL
+([https://github.com/ucb-rit/savio-training-parallel-2020](https://github.com/ucb-rit/savio-training-parallel-2020)),
+or simply as a zip file ([https://tinyurl.com/brc-apr20/archive/master.zip](https://tinyurl.com/brc-apr20/archive/master.zip)).
 
 # Outline
 
