@@ -632,15 +632,10 @@ See GNU Parallel [User Guide](https://www.gnu.org/software/parallel/) for more d
    b
    c   
    
-   [user@n0002 BRC]$ parallel --link echo {1}{2} ::: a b c ::: 1 2 3
+ [user@n0002 BRC]$ parallel echo {} ::: a b c ::: `seq 3`
    a 1
-   b 2   
+   b 2
    c 3
-   
-   [user@n0002 BRC]$ parallel echo {} ::: `seq 3`
-   1
-   2
-   3
 ```
 
 # Task list in the format of a text file
@@ -648,8 +643,6 @@ See GNU Parallel [User Guide](https://www.gnu.org/software/parallel/) for more d
  - parallel [OPTIONS] COMMAND {} :::: argfile(s)
  - parallel –a argfile(s) [OPTIONS] COMMAND {} 
  
-`[user@n0002 BRC]$ parallel echo {} :::: task.lst `
-
 Generate input files and a task list
 ```
 [user@n0002 BRC]$ mkdir -p input; for i in `seq 500`; do touch input/test$i.in ; echo "test $i" > input/test$i.in ; done
@@ -659,15 +652,27 @@ Generate input files and a task list
    	input/test1.in
 	input/test2.in
 	...
-	
+[user@n0002 BRC]$ parallel echo {} :::: task.lst	
 [user@n0002 BRC]$ parallel -a task.lst echo {}
 	input/test0.in
    	input/test1.in
-	input/test3.in
+	input/test2.in
+	...
+```
+Task list can have multipe parameters
+```
+[user@n0002 BRC]$ cat task2.csv
+	in1,20,out1
+	in2,30,out2
+	..
+	
+[user@n0002 BRC]$ parallel --colsep '\,' -a task2.csv echo {}
+	in1 20 out1
+	in2 30 out2
 	...
 ```
 # Example 1: Same application/commands fed with different parameter sets
-**parameters and command options** 
+**Parameters and Flags** 
 ```
 [user@n0002 BRC]$ echo `hostname` "copy input to output "; cp input/xxx.in output/xxx.out
 ```
@@ -677,14 +682,14 @@ Launch 4 parallel tasks
 [user@n0002 BRC]$ parallel --jobs 4 -a task.lst "echo `hostname` "copy input to output "; cp $1 $2" {} output/{/.}.out
 ```
 - Whereas
-   	- --jobs/-j: The number of commands to run concurrently per node
-	- -j 0: launch as many tasks as core# permits.
-	- -a: a text file used as the task list. 
+   	- --jobs/-j: The number of tasks to run concurrently per node
+	- -a: text file as a task list 
 	- {}: 1st parameter taking one line from task.lst per task
 	- {/.} remove file path and extension  
 	- output/{/.}.out: 2nd parameter with a new path and file extension 	
 
-Oftentimes, commands need more than one line of code. In that case, a script is used as the core unit.
+- Oftentimes, commands need more than one line of code. 
+- A script is used as the core unit (bash, python, R, MatLab code...)
 
 ```	
 [user@n0002 BRC]$ cat hostname.sh
@@ -693,14 +698,15 @@ Oftentimes, commands need more than one line of code. In that case, a script is 
 	echo `hostname` "copy input to output "
 	cp $1 $2 
 		 		 
-[user@n0002 BRC]$ parallel -j 4 -a task.lst ./hostname.sh {} output/{/.}.out
+[user@n0002 BRC]$ parallel -j 4 -a task.lst sh hostname.sh {} output/{/.}.out
 ```
-# More GNU Parallel command options
+# More GNU Parallel Flags
 
-- --sshloginfile/-slf sshloginfile: sshloginfile (node list)
-- --workdir/-wd: landing workdir on compute node, default is $HOME
-- --joblog: log of completed tasks
-- --resume: resume from unfinished tasks based on log info 
+- --dry-run: print the commands to be run
+- --sshloginfile/-slf sshloginfile: node list
+- --workdir/-wd: landing workdir on compute nodes, default is $HOME
+- --joblog: keep track of completed tasks
+- --resume: resume to run unfinished tasks based on log info 
 - --progress: display job progress
 - --eta: estimated time to finish
 - --load: threshold for CPU load, e.g. 80%
@@ -717,6 +723,26 @@ ETA: 61s Left: 492 AVG: 0.12s  n0148.savio3:4/4/50%/0.5s  n0149.savio3:4/4/50%/0
 ETA: 60s Left: 491 AVG: 0.11s  n0148.savio3:4/5/52%/0.4s  n0149.savio3:4/4/47%/0.5s n0149.savio3 copy input to output
 ETA: 60s Left: 490 AVG: 0.10s  n0148.savio3:4/5/52%/0.4s  n0149.savio3:3/5/47%/0.4s n0148.savio3 copy input to output
 ...
+```
+Time Comparision :
+```
+[user@n0002 BRC]$ time for i in `cat task.lst`; do out=$(basename $i|sed s/in/out/|awk '{print "output/"$0}'); sh hostname.sh $i $out ; done
+...
+real	0m8.967s
+user	0m1.221s
+sys	0m3.222s
+
+[user@n0002 BRC]$ time parallel --jobs 1 -a task.lst  sh hostname.sh {} output/{/.}.out
+...
+real	0m7.628s
+user	0m1.390s
+sys	0m3.414s
+
+[user@n0002 BRC]$ time parallel --jobs 4 -a task.lst --joblog j.log  sh hostname.sh {} output/{/.}.out
+....
+real	0m1.450s
+user	0m1.422s
+sys	0m3.231s
 
 ```
 # Log  
@@ -727,10 +753,9 @@ Seq     Host    Starttime       JobRuntime      Send    Receive Exitval Signal  
 2       n0148.savio3    1587243717.221       1.279      0       84      0       0       sh hostname.sh input/test10.in output/test10.out
 
 ```
-Typically *--log logfile* pairs with the *resume* option for production runs. 
-Note: a uniq name of logfile is recommended, such as $SLURM_JOB_NAME.log
+Typically *--log logfile* pairs with the *resume* flag for production runs. 
+Note: a uniq name for logfile is recommended, such as $SLURM_JOB_NAME.log
 Otherwise, job rerun will not start when the same logfile exists 
-
 
 # Example 2: input from a command list 
 
@@ -755,22 +780,10 @@ Otherwise, job rerun will not start when the same logfile exists
 Hello1 from processor n0148.savio3, rank 0 out of 2 processors
 Hello1 from processor n0148.savio3, rank 1 out of 2 processors
 
-[user@n0002 BRC]$ time for index in `seq 40`; do  mpirun -np 2 ./hello_rank $index; done
-Hello 1 from processor n0148.savio3, rank 0 out of 2 processors
-Hello 1 from processor n0149.savio3, rank 1 out of 2 processors
-Hello 2 from processor n0148.savio3, rank 0 out of 2 processors
-Hello 2 from processor n0149.savio3, rank 1 out of 2 processors
-Hello 3 from processor n0148.savio3, rank 0 out of 2 processors
-Hello 3 from processor n0149.savio3, rank 1 out of 2 processors
-
-...
-real	1m17.843s
-user	0m2.052s
-sys	0m3.429s
 ```
 - launch independent MPI tasks in parallel 
 ```
-[user@n0002 BRC]$ time parallel -j 16 mpirun -np 2 ./hello_rank ::: `seq 40`
+[user@n0002 BRC]$ parallel -j 16 mpirun -np 2 ./hello_rank ::: `seq 40`
 Hello 13 from processor n0148.savio3, rank 0 out of 2 processors
 Hello 13 from processor n0149.savio3, rank 1 out of 2 processors
 Hello 2 from processor n0148.savio3, rank 0 out of 2 processors
@@ -778,12 +791,9 @@ Hello 2 from processor n0149.savio3, rank 1 out of 2 processors
 Hello 7 from processor n0148.savio3, rank 0 out of 2 processors
 Hello 7 from processor n0149.savio3, rank 1 out of 2 processors
 ...
-real	0m14.764s
-user	0m2.196s
-sys	0m14.026s
 ```
 # Job submission sample
-We request 2 nodes as the showcase. Number of nodes to request depends on the the size of your task list. 
+Number of nodes to request depends on the the size of your task list. We use 2 nodes as an example. 
 
 ```
 #!/bin/bash
@@ -801,7 +811,7 @@ cd $WORKDIR
 
 export JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE*$SLURM_JOB_NUM_NODES )) 
 ## when each task is multi-threaded, say NTHREADS=2, then JOBS_PER_NODE should be revised as below
-## JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE * $SLURM_JOB_NUM_NODES / NTHREADS ))
+## JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE * $SLURM_JOB_NUM_NODES / $NTHREADS ))
 
 echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g > hostfile
 ## when GNU parallel can't detect core# of remote nodes, say --progress/--eta, 
