@@ -51,8 +51,8 @@ machine.
 
 <center><img src="figures/generic_machine.jpeg"></center>
 
-savio2 nodes: two Intel Xeon 12-core Haswell processors (24 cores per
-node (a few have 28))
+Example of savio2 nodes: two Intel Xeon 12-core Haswell processors (24
+cores per node (a few have 28))
 
 So a cartoon representation of a cluster like Savio is like [this](https://waterprogramming.wordpress.com/2017/07/21/developing-parallelised-code-with-mpi-for-dummies-in-c-part-12/).
 
@@ -79,7 +79,8 @@ So a cartoon representation of a cluster like Savio is like [this](https://water
   - **workers**: the individual processes that are carrying out a
     (parallelized) computation (e.g., Python, R, or MATLAB workers
     controlled from the master Python/R/MATLAB process).
-  - **(computational) tasks**: individual computations needing to be done
+  - **(computational) tasks**: individual computations a user needs to
+    get done
     - easily confused with **MPI tasks**: the individual processes run
     as part of an MPI computation.
 	- easily confused with **SLURM tasks**: the number of individual
@@ -126,6 +127,8 @@ Possible solutions:
 
 - Embarrassingly parallel computation of multiple jobs on one or more nodes*
 - Parallelize one job over CPU cores*
+   - Threaded code
+   - Multi-process job
 - Parallelize one job over multiple nodes*
 - Vector instructions (AVX2/AVX512) allow vectorized arithmetic on recent
   Intel CPUs (e.g., savio2, savio3 nodes)
@@ -151,7 +154,7 @@ Tools:
    - [GNU parallel](https://www.gnu.org/software/parallel/parallel_tutorial.html#GNU-Parallel-Tutorial) (standard Linux tool)*
    -
    [ht_helper (Savio-specific tool)](https://research-it.berkeley.edu/services/high-performance-computing/user-guide/hthelper-script)
-   - SLURM job arrays (careful, one job per node...)
+   - SLURM job arrays (careful, one job per node on most partitions ...)
 
 \* focusing on this approach today
 
@@ -659,7 +662,7 @@ Generate input files and a task list
 	input/test2.in
 	...
 ```
-Task list can have multipe parameters
+Task list can have multiple parameters
 ```
 [user@n0002 BRC]$ cat task2.csv
 	in1,20,out1
@@ -833,14 +836,14 @@ $PARALLEL -a task.lst sh hostname.sh {} output/{/.}.out
 
 # Parallelization in Python, R, and MATLAB
 
-- Support for threaded computations:
+- Support for *threaded* computations:
 
   - Python: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)
   - R: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)
   - MATLAB: threaded linear algebra via MKL plus automatic threading of
 various functions
 
-- Support for multi-process parallelization
+- Support for *multi-process* parallelization
 
   - Python
     - Parallel map operations via  *ipyparallel*, *Dask*, other packages

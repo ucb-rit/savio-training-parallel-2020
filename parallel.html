@@ -6,90 +6,91 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="April 21, 2020" />
   <title>Savio parallel processing training</title>
-  <style>
-    code{white-space: pre-wrap;}
-    span.smallcaps{font-variant: small-caps;}
-    span.underline{text-decoration: underline;}
-    div.column{display: inline-block; vertical-align: top; width: 50%;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
-    pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-    pre > code.sourceCode > span:empty { height: 1.2em; }
-    code.sourceCode > span { color: inherit; text-decoration: inherit; }
-    div.sourceCode { margin: 1em 0; }
-    pre.sourceCode { margin: 0; }
-    @media screen {
-    div.sourceCode { overflow: auto; }
-    }
-    @media print {
-    pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-    }
-    pre.numberSource code
-      { counter-reset: source-line 0; }
-    pre.numberSource code > span
-      { position: relative; left: -4em; counter-increment: source-line; }
-    pre.numberSource code > span > a:first-child::before
-      { content: counter(source-line);
-        position: relative; left: -1em; text-align: right; vertical-align: baseline;
-        border: none; display: inline-block;
-        -webkit-touch-callout: none; -webkit-user-select: none;
-        -khtml-user-select: none; -moz-user-select: none;
-        -ms-user-select: none; user-select: none;
-        padding: 0 4px; width: 4em;
-        color: #aaaaaa;
-      }
-    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-    div.sourceCode
-      {   }
-    @media screen {
-    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-    }
-    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-    code span.at { color: #7d9029; } /* Attribute */
-    code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { } /* BuiltIn */
-    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-    code span.ch { color: #4070a0; } /* Char */
-    code span.cn { color: #880000; } /* Constant */
-    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-    code span.dt { color: #902000; } /* DataType */
-    code span.dv { color: #40a070; } /* DecVal */
-    code span.er { color: #ff0000; font-weight: bold; } /* Error */
-    code span.ex { } /* Extension */
-    code span.fl { color: #40a070; } /* Float */
-    code span.fu { color: #06287e; } /* Function */
-    code span.im { } /* Import */
-    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-    code span.op { color: #666666; } /* Operator */
-    code span.ot { color: #007020; } /* Other */
-    code span.pp { color: #bc7a00; } /* Preprocessor */
-    code span.sc { color: #4070a0; } /* SpecialChar */
-    code span.ss { color: #bb6688; } /* SpecialString */
-    code span.st { color: #4070a0; } /* String */
-    code span.va { color: #19177c; } /* Variable */
-    code span.vs { color: #4070a0; } /* VerbatimString */
-    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; position: absolute; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; }
+pre.numberSource a.sourceLine:empty
+  { position: absolute; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
 </head>
 <body>
-<header id="title-block-header">
+<header>
 <h1 class="title">Savio parallel processing training</h1>
 <p class="author">April 21, 2020</p>
 <p class="date">Nicolas Chan, Wei Feinstein, Christopher Hann-Soden, Chris Paciorek</p>
 </header>
 <h1 id="introduction">Introduction</h1>
 <p>We’ll do this mostly as a demonstration. We encourage you to login to your account and try out the various examples yourself as we go through them.</p>
-<p>Much of this material is based on the extensive Savio documention we have prepared and continue to prepare, available at our new documentation site: <a href="https://docs-research-it.berkeley.edu/services/high-performance-computing">https://docs-research-it.berkeley.edu/services/high-performance-computing</a> as well as our old site: <a href="http://research-it.berkeley.edu/services/high-performance-computing">http://research-it.berkeley.edu/services/high-performance-computing</a>.</p>
-<p>The materials for this tutorial are available using git at the short URL (<a href="https://tinyurl.com/brc-apr20">https://tinyurl.com/brc-apr20</a>), the GitHub URL (<a href="https://github.com/ucb-rit/savio-training-parallel-2020">https://github.com/ucb-rit/savio-training-parallel-2020</a>), or simply as a <a href="https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip">zip file</a>.</p>
+<p>Much of this material is based on the extensive Savio documention we have prepared and continue to prepare, available at our new documentation site: <a href="https://docs-research-it.berkeley.edu/services/high-performance-computing" class="uri">https://docs-research-it.berkeley.edu/services/high-performance-computing</a> as well as our old site: <a href="http://research-it.berkeley.edu/services/high-performance-computing" class="uri">http://research-it.berkeley.edu/services/high-performance-computing</a>.</p>
+<p>The materials for this tutorial are available using git at the short URL (<a href="https://tinyurl.com/brc-apr20" class="uri">https://tinyurl.com/brc-apr20</a>), the GitHub URL (<a href="https://github.com/ucb-rit/savio-training-parallel-2020" class="uri">https://github.com/ucb-rit/savio-training-parallel-2020</a>), or simply as a <a href="https://github.com/ucb-rit/savio-training-parallel-2020/archive/master.zip">zip file</a>.</p>
 <h1 id="outline">Outline</h1>
 <ul>
 <li>Introduction (Chris)
@@ -137,7 +138,7 @@
 <center>
 <img src="figures/generic_machine.jpeg">
 </center>
-<p>savio2 nodes: two Intel Xeon 12-core Haswell processors (24 cores per node (a few have 28))</p>
+<p>Example of savio2 nodes: two Intel Xeon 12-core Haswell processors (24 cores per node (a few have 28))</p>
 <p>So a cartoon representation of a cluster like Savio is like <a href="https://waterprogramming.wordpress.com/2017/07/21/developing-parallelised-code-with-mpi-for-dummies-in-c-part-12/">this</a>.</p>
 <h1 id="introduction-terms-and-concepts">Introduction: Terms and concepts</h1>
 <ul>
@@ -161,7 +162,7 @@
 <li>seen as &gt;100% CPU usage in <code>top</code> and <code>ps</code></li>
 </ul></li>
 <li><strong>workers</strong>: the individual processes that are carrying out a (parallelized) computation (e.g., Python, R, or MATLAB workers controlled from the master Python/R/MATLAB process).</li>
-<li><strong>(computational) tasks</strong>: individual computations needing to be done
+<li><strong>(computational) tasks</strong>: individual computations a user needs to get done
 <ul>
 <li>easily confused with <strong>MPI tasks</strong>: the individual processes run as part of an MPI computation.</li>
 <li>easily confused with <strong>SLURM tasks</strong>: the number of individual processes you plan to run.</li>
@@ -211,7 +212,11 @@
 <h1 id="introduction-types-of-parallelization">Introduction: Types of parallelization</h1>
 <ul>
 <li>Embarrassingly parallel computation of multiple jobs on one or more nodes*</li>
-<li>Parallelize one job over CPU cores*</li>
+<li>Parallelize one job over CPU cores*
+<ul>
+<li>Threaded code</li>
+<li>Multi-process job</li>
+</ul></li>
 <li>Parallelize one job over multiple nodes*</li>
 <li>Vector instructions (AVX2/AVX512) allow vectorized arithmetic on recent Intel CPUs (e.g., savio2, savio3 nodes)</li>
 </ul>
@@ -229,7 +234,7 @@
 <ul>
 <li><a href="https://www.gnu.org/software/parallel/parallel_tutorial.html#GNU-Parallel-Tutorial">GNU parallel</a> (standard Linux tool)*</li>
 <li><a href="https://research-it.berkeley.edu/services/high-performance-computing/user-guide/hthelper-script">ht_helper (Savio-specific tool)</a></li>
-<li>SLURM job arrays (careful, one job per node…)</li>
+<li>SLURM job arrays (careful, one job per node on most partitions …)</li>
 </ul>
 <p>* focusing on this approach today</p>
 <h1 id="types-of-parallelization-threaded-computations">Types of parallelization: Threaded computations</h1>
@@ -246,7 +251,7 @@
 <center>
 <img src="figures/threads.gif">
 </center>
-<p>(Image provided by <a href="https://computing.llnl.gov/tutorials/openMP">https://computing.llnl.gov/tutorials/openMP</a>.)</p>
+<p>(Image provided by <a href="https://computing.llnl.gov/tutorials/openMP" class="uri">https://computing.llnl.gov/tutorials/openMP</a>.)</p>
 <h1 id="types-of-parallelization-threaded-computations-part-2">Types of parallelization: Threaded computations (part 2)</h1>
 <p>Examples in standard software:</p>
 <ul>
@@ -288,13 +293,13 @@
 </ul>
 <h1 id="types-of-parallelization-distributed-computations">Types of parallelization: Distributed computations</h1>
 <p>Traditional high-performance computing (HPC) runs a large computation by (carefully) splitting the computation amongst communicating MPI workers (MPI ‘tasks’ or ‘ranks’).</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1"></a>$ <span class="ex">mpicc</span> mpi_example.c -o mpi_example</span>
-<span id="cb3-2"><a href="#cb3-2"></a>$ <span class="ex">mpirun</span> -np 20 mpi_example</span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="co"># Hello from MPI process 2 out of 20 on savio2.n0070</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="co"># Hello from MPI process 0 out of 20 on savio2.n0096</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="co"># Hello from MPI process 18 out of 20 on savio2.n0070</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a><span class="co"># Hello from MPI process 7 out of 20 on savio2.n0098</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a><span class="co"># &lt;snip&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" data-line-number="1">$ <span class="ex">mpicc</span> mpi_example.c -o mpi_example</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">$ <span class="ex">mpirun</span> -np 20 mpi_example</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co"># Hello from MPI process 2 out of 20 on savio2.n0070</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="co"># Hello from MPI process 0 out of 20 on savio2.n0096</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co"># Hello from MPI process 18 out of 20 on savio2.n0070</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co"># Hello from MPI process 7 out of 20 on savio2.n0098</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co"># &lt;snip&gt;</span></a></code></pre></div>
 <p>Comments:</p>
 <ul>
 <li>multiple (e.g., 20 above) copies of the same executable are run at once (SPMD)</li>
@@ -362,73 +367,73 @@
 <p>Examples taken from: <a href="https://research-it.berkeley.edu/services/high-performance-computing/running-your-jobs">Running your Jobs</a></p>
 <h2 id="openmp-job">OpenMP Job</h2>
 <p>Notice that we set <code>--cpus-per-task</code> and then access the environment variable to set the OMP number of threads to use. If you have another way of doing multithreaded tasks, you can use the same <code>$SLURM_CPUS_PER_TASK</code> environment variable.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="co"># Job name:</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="co">#SBATCH --job-name=test</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="co">#</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="co"># Account:</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="co">#SBATCH --account=account_name</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="co">#</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a><span class="co"># Partition:</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a><span class="co">#SBATCH --partition=partition_name</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a><span class="co">#</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a><span class="co"># Request one node:</span></span>
-<span id="cb4-12"><a href="#cb4-12"></a><span class="co">#SBATCH --nodes=1</span></span>
-<span id="cb4-13"><a href="#cb4-13"></a><span class="co">#</span></span>
-<span id="cb4-14"><a href="#cb4-14"></a><span class="co"># Specify one task:</span></span>
-<span id="cb4-15"><a href="#cb4-15"></a><span class="co">#SBATCH --ntasks-per-node=1</span></span>
-<span id="cb4-16"><a href="#cb4-16"></a><span class="co">#</span></span>
-<span id="cb4-17"><a href="#cb4-17"></a><span class="co"># Number of processors for single task needed for use case (example):</span></span>
-<span id="cb4-18"><a href="#cb4-18"></a><span class="co">#SBATCH --cpus-per-task=4</span></span>
-<span id="cb4-19"><a href="#cb4-19"></a><span class="co">#</span></span>
-<span id="cb4-20"><a href="#cb4-20"></a><span class="co"># Wall clock limit:</span></span>
-<span id="cb4-21"><a href="#cb4-21"></a><span class="co">#SBATCH --time=00:00:30</span></span>
-<span id="cb4-22"><a href="#cb4-22"></a><span class="co">#</span></span>
-<span id="cb4-23"><a href="#cb4-23"></a><span class="co">## Command(s) to run (example):</span></span>
-<span id="cb4-24"><a href="#cb4-24"></a><span class="bu">export</span> <span class="va">OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK</span></span>
-<span id="cb4-25"><a href="#cb4-25"></a><span class="ex">./a.out</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="co"># Job name:</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="co">#SBATCH --job-name=test</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="co"># Account:</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="co">#SBATCH --account=account_name</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="co"># Partition:</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="co">#SBATCH --partition=partition_name</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11"><span class="co"># Request one node:</span></a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"><span class="co">#SBATCH --nodes=1</span></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14"><span class="co"># Specify one task:</span></a>
+<a class="sourceLine" id="cb4-15" data-line-number="15"><span class="co">#SBATCH --ntasks-per-node=1</span></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-17" data-line-number="17"><span class="co"># Number of processors for single task needed for use case (example):</span></a>
+<a class="sourceLine" id="cb4-18" data-line-number="18"><span class="co">#SBATCH --cpus-per-task=4</span></a>
+<a class="sourceLine" id="cb4-19" data-line-number="19"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-20" data-line-number="20"><span class="co"># Wall clock limit:</span></a>
+<a class="sourceLine" id="cb4-21" data-line-number="21"><span class="co">#SBATCH --time=00:00:30</span></a>
+<a class="sourceLine" id="cb4-22" data-line-number="22"><span class="co">#</span></a>
+<a class="sourceLine" id="cb4-23" data-line-number="23"><span class="co">## Command(s) to run (example):</span></a>
+<a class="sourceLine" id="cb4-24" data-line-number="24"><span class="bu">export</span> <span class="va">OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK</span></a>
+<a class="sourceLine" id="cb4-25" data-line-number="25"><span class="ex">./a.out</span></a></code></pre></div>
 <h2 id="openmpi-job">OpenMPI job</h2>
 <p>Notice we request 2 nodes and have 20 tasks per node. We could also leave out the number of nodes requested and simply say 40 tasks, and then Slurm would know we need 2 nodes since we said to use 1 CPU per task.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="co"># Job name:</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="co">#SBATCH --job-name=test</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="co">#</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="co"># Account:</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a><span class="co">#SBATCH --account=account_name</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="co">#</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a><span class="co"># Partition:</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a><span class="co">#SBATCH --partition=partition_name</span></span>
-<span id="cb5-10"><a href="#cb5-10"></a><span class="co">#</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a><span class="co"># Number of nodes needed for use case:</span></span>
-<span id="cb5-12"><a href="#cb5-12"></a><span class="co">#SBATCH --nodes=2</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a><span class="co">#</span></span>
-<span id="cb5-14"><a href="#cb5-14"></a><span class="co"># Tasks per node based on number of cores per node (example):</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a><span class="co">#SBATCH --ntasks-per-node=20</span></span>
-<span id="cb5-16"><a href="#cb5-16"></a><span class="co">#</span></span>
-<span id="cb5-17"><a href="#cb5-17"></a><span class="co"># Processors per task:</span></span>
-<span id="cb5-18"><a href="#cb5-18"></a><span class="co">#SBATCH --cpus-per-task=1</span></span>
-<span id="cb5-19"><a href="#cb5-19"></a><span class="co">#</span></span>
-<span id="cb5-20"><a href="#cb5-20"></a><span class="co"># Wall clock limit:</span></span>
-<span id="cb5-21"><a href="#cb5-21"></a><span class="co">#SBATCH --time=00:00:30</span></span>
-<span id="cb5-22"><a href="#cb5-22"></a><span class="co">#</span></span>
-<span id="cb5-23"><a href="#cb5-23"></a><span class="co">## Command(s) to run (example):</span></span>
-<span id="cb5-24"><a href="#cb5-24"></a><span class="ex">module</span> load gcc openmpi</span>
-<span id="cb5-25"><a href="#cb5-25"></a><span class="ex">mpirun</span> ./a.out</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">#!/bin/bash</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co"># Job name:</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co">#SBATCH --job-name=test</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="co"># Account:</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="co">#SBATCH --account=account_name</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="co"># Partition:</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="co">#SBATCH --partition=partition_name</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"><span class="co"># Number of nodes needed for use case:</span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12"><span class="co">#SBATCH --nodes=2</span></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14"><span class="co"># Tasks per node based on number of cores per node (example):</span></a>
+<a class="sourceLine" id="cb5-15" data-line-number="15"><span class="co">#SBATCH --ntasks-per-node=20</span></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"><span class="co"># Processors per task:</span></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"><span class="co">#SBATCH --cpus-per-task=1</span></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-20" data-line-number="20"><span class="co"># Wall clock limit:</span></a>
+<a class="sourceLine" id="cb5-21" data-line-number="21"><span class="co">#SBATCH --time=00:00:30</span></a>
+<a class="sourceLine" id="cb5-22" data-line-number="22"><span class="co">#</span></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23"><span class="co">## Command(s) to run (example):</span></a>
+<a class="sourceLine" id="cb5-24" data-line-number="24"><span class="ex">module</span> load gcc openmpi</a>
+<a class="sourceLine" id="cb5-25" data-line-number="25"><span class="ex">mpirun</span> ./a.out</a></code></pre></div>
 <h1 id="monitoring-jobs">Monitoring Jobs</h1>
 <p>How do I know if my job is using resources efficiently?</p>
 <h3 id="while-job-is-running">While job is running</h3>
 <p>Using <code>srun</code> and <code>htop</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1"></a><span class="ex">srun</span> --jobid=<span class="va">$JOB_ID</span> --pty bash -i</span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="fu">uptime</span> <span class="co"># check the load</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a></span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="co"># use htop for a visual representation of CPU usage</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="ex">module</span> load htop</span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="ex">htop</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ex">srun</span> --jobid=<span class="va">$JOB_ID</span> --pty bash -i</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="fu">uptime</span> <span class="co"># check the load</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="co"># use htop for a visual representation of CPU usage</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="ex">module</span> load htop</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="ex">htop</span></a></code></pre></div>
 <p>Using warewulf (might not be working):</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1"></a><span class="ex">wwall</span> -j <span class="va">$JOB_ID</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ex">wwall</span> -j <span class="va">$JOB_ID</span></a></code></pre></div>
 <p>Using <a href="http://metacluster.lbl.gov/warewulf">metacluster</a> (imprecise but can give general idea if you know which nodes you’re on):</p>
 <h3 id="after-the-job-has-run">After the job has run</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1"></a><span class="ex">sacct</span> -j <span class="va">$JOB_ID</span> --format JobID,TotalCPU,CPUTime,NCPUs,MaxRSS,Start,End</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ex">sacct</span> -j <span class="va">$JOB_ID</span> --format JobID,TotalCPU,CPUTime,NCPUs,MaxRSS,Start,End</a></code></pre></div>
 <p>Not perfectly accurate, since it measures only the parent process of your job (not child processes). Ideally, <code>TotalCPU</code> will be as close as possible to <code>CPUTime</code>.</p>
 <h1 id="parallelization-using-existing-software">Parallelization using existing software</h1>
 <p>Many times you simply want to use an existing tool to perform an analysis. Parallelization depends on how the developer designed the software, and ease of use usually depends on how well documented the software is.</p>
@@ -453,7 +458,7 @@
 <p>By default, Bowtie 2 uses the Threading Building Blocks library (TBB) for this. [If TBB is not available] Bowtie 2 can be built with make NO_TBB=1 to use pthreads or Windows native multithreading instead.</p>
 </blockquote>
 <p>From the manual, under Performance Options:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1"></a><span class="ex">-p/--threads</span> NTHREADS</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ex">-p/--threads</span> NTHREADS</a></code></pre></div>
 <blockquote>
 <p>Launch NTHREADS parallel search threads (default: 1). Threads will run on separate processors/cores and synchronize when parsing reads and outputting alignments. Searching for alignments is highly parallel, and speedup is close to linear. Increasing -p increases Bowtie 2’s memory footprint. E.g. when aligning to a human genome index, increasing -p from 1 to 8 increases the memory footprint by a few hundred megabytes. This option is only available if bowtie is linked with the pthreads library (i.e. if BOWTIE_PTHREADS=0 is not specified at build time).</p>
 </blockquote>
@@ -472,7 +477,7 @@
 <li>Batching can increase memory use</li>
 </ul>
 <p>Buried in the appendices of the BLAST documentation is this option:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1"></a><span class="ex">-num_threads</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ex">-num_threads</span></a></code></pre></div>
 <blockquote>
 <p>Number of threads (CPUs) to use in blast search.</p>
 </blockquote>
@@ -491,11 +496,11 @@
 <li>scatter-gather (general technique) to describe multi-node processing (paradigm)</li>
 </ul>
 <p>The key options, usable in some tools, are</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1"></a><span class="ex">-nt</span> / --num_threads</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ex">-nt</span> / --num_threads</a></code></pre></div>
 <blockquote>
 <p>controls the number of data threads sent to the processor</p>
 </blockquote>
-<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1"></a><span class="ex">-nct</span> / --num_cpu_threads_per_data_thread</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ex">-nct</span> / --num_cpu_threads_per_data_thread</a></code></pre></div>
 <blockquote>
 <p>controls the number of CPU threads allocated to each data thread</p>
 </blockquote>
@@ -689,15 +694,15 @@ LocusWalker
 </ul>
 <h1 id="iq-tree">IQ-TREE</h1>
 <p>IQ-TREE is a phylogenetics package that makes a maximum-likelihood estimation of the evolutionary history of a set of sequences (i.e. an evolutionary tree).</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1"></a><span class="ex">-nt</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ex">-nt</span></a></code></pre></div>
 <blockquote>
 <p>Specify the number of CPU cores for the multicore version. A special option <code>-nt</code> AUTO will tell IQ-TREE to automatically determine the best number of cores given the current data and computer.</p>
 </blockquote>
 <p>Some testing will probably be necessary to learn how memory usage and runtime scale with more threads, but the AUTO parameter is a nice convenience feature implemented by some developers.</p>
 <p>There is also an MPI version which must be compiled seperately, creating a second binary “iqtree-mpi”.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1"></a><span class="ex">module</span> load gcc</span>
-<span id="cb14-2"><a href="#cb14-2"></a><span class="ex">module</span> load openmpi</span>
-<span id="cb14-3"><a href="#cb14-3"></a><span class="fu">cmake</span> -DIQTREE_FLAGS=mpi ..</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ex">module</span> load gcc</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="ex">module</span> load openmpi</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="fu">cmake</span> -DIQTREE_FLAGS=mpi ..</a></code></pre></div>
 <p>The multicore version is very easy to use on a single node, but large analyses must use the MPI version.</p>
 <h1 id="config-files-environment-variables">Config Files &amp; Environment Variables</h1>
 <p>Sometimes the parallelization settings are set in configuration files or in environment variables, rather than as arguments to the execution call.</p>
@@ -774,7 +779,7 @@ ssh -n node2 &quot;blastp -query protein1.faa -db db/img_v400_PROT.00 -out prote
     input/test1.in
     input/test2.in
     ...</code></pre>
-<p>Task list can have multipe parameters</p>
+<p>Task list can have multiple parameters</p>
 <pre><code>[user@n0002 BRC]$ cat task2.csv
     in1,20,out1
     in2,30,out2
@@ -924,13 +929,13 @@ $PARALLEL -a task.lst sh hostname.sh {} output/{/.}.out    </code></pre>
 </ul>
 <h1 id="parallelization-in-python-r-and-matlab">Parallelization in Python, R, and MATLAB</h1>
 <ul>
-<li><p>Support for threaded computations:</p>
+<li><p>Support for <em>threaded</em> computations:</p>
 <ul>
 <li>Python: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)</li>
 <li>R: threaded linear algebra when linked to a parallel BLAS (e.g., OpenBLAS)</li>
 <li>MATLAB: threaded linear algebra via MKL plus automatic threading of various functions</li>
 </ul></li>
-<li><p>Support for multi-process parallelization</p>
+<li><p>Support for <em>multi-process</em> parallelization</p>
 <ul>
 <li>Python
 <ul>
@@ -1179,7 +1184,7 @@ end</code></pre>
 <li>(virtual) office hours: Wed. 1:30-3:00 and Thur. 9:30-11:00</li>
 </ul></li>
 </ul>
-<p>Zoom links for virtual office hours: <a href="https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting">https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting</a></p>
+<p>Zoom links for virtual office hours: <a href="https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting" class="uri">https://research-it.berkeley.edu/programs/berkeley-research-computing/research-computing-consulting</a></p>
 <h1 id="upcoming-events-and-hiring">Upcoming events and hiring</h1>
 <ul>
 <li>Research IT is hiring graduate students as domain consultants. Please chat with one of us if interested.</li>
