@@ -1,5 +1,5 @@
 # savio-training-parallel-2020
-Materials for Savio parallel processing training on April 8, 2020.
+Materials for Savio parallel processing training on April 20, 2020.
 
 The main document is `parallel.html` (or `parallel_slides.html` if you prefer a version that appears in slide-show format rather than as one long HTML page).
 
