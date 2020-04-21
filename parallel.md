@@ -816,9 +816,9 @@ module load gnu-parallel/2019.03.22
 export WORKDIR=/global/scratch/$USER/your/path
 cd $WORKDIR
 
-export JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE*$SLURM_JOB_NUM_NODES )) 
+export JOBS_PER_NODE=$SLURM_CPUS_ON_NODE  
 ## when each task is multi-threaded, say NTHREADS=2, then JOBS_PER_NODE should be revised as below
-## JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE * $SLURM_JOB_NUM_NODES / $NTHREADS ))
+## JOBS_PER_NODE=$(( $SLURM_CPUS_ON_NODE / $NTHREADS ))
 
 echo $SLURM_JOB_NODELIST |sed s/\,/\\n/g > hostfile
 ## when GNU parallel can't detect core# of remote nodes, say --progress/--eta, 
